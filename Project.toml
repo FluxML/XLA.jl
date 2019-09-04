@@ -1,0 +1,13 @@
+name = "XLATools"
+uuid = "e639e2dd-7a4d-472e-a96e-206d6a26373c"
+authors = ["Mike J Innes <mike.j.innes@gmail.com>"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
