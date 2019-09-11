@@ -9,8 +9,8 @@ else
 		pyimport("jaxlib")
 	catch e
 		e isa PyCall.PyError || rethrow(e)
-		warn("""
-      Python Dependancies not installed
+		error("""
+      Python Dependencies not installed
       Please either:
        - Rebuild PyCall to use Conda, by running in the julia REPL:
           - `ENV[PYTHON]=""; Pkg.build("PyCall"); Pkg.build("XLATools")`
