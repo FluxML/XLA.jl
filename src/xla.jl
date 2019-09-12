@@ -1,13 +1,14 @@
 const XLAScalar = Union{Float64,Float32,Float16,Int64,Int32,Int16}
 
-mutable struct XLAArray{T,N} <: AbstractArray{T,N}
+struct XLAArray{T,N} <: AbstractArray{T,N}
   buffer::PyObject
 end
 
 function XLAArray(x::Array{<:XLAScalar})
   buffer = xlaclient.Buffer.from_pyval(x)
   xla = XLAArray{eltype(x),ndims(x)}(buffer)
-  finalizer(x -> x.buffer.delete(), xla)
+  delete = buffer.delete # work around a segfault on exit
+  finalizer(buf -> ispynull(delete) || delete(), xla.buffer)
   return xla
 end
 
