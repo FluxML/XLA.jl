@@ -1,6 +1,9 @@
-using XLATools
-using Test
+using XLATools, Test
 
-@testset "XLATools.jl" begin
-    # Write your own tests here.
+@testset "XLATools" begin
+
+@testset "XLA" begin
+  include("xla.jl")
+end
+
 end
