@@ -115,5 +115,5 @@ end
 
 function compile(ir::IR)
   comp = build(ir).Compile()
-  return (xs...) -> wrapvalue(comp.Execute(xla.(xs)))
+  return (xs...) -> wrapvalue(comp.Execute(xlaclient.Buffer.from_pyval.(xs)))
 end

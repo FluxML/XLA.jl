@@ -37,6 +37,12 @@ struct XTuple end
 
 build!(builder, ::XTuple, xs...) = builder.Tuple(xs...)
 
+struct GetTupleElement
+  idx::Int
+end
+
+build!(builder, op::GetTupleElement, x) = builder.GetTupleElement(x, op.idx)
+
 struct Conditional end
 
 build!(builder, ::Conditional, pred,

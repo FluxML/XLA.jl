@@ -1,5 +1,6 @@
 using XLATools, Test
-using XLATools: XArray, Shape, Add, Neg, Mul, Ge, XTuple, Conditional, xlaclient, compile
+using XLATools: XArray, Shape, xlaclient, compile
+using XLATools: Add, Neg, Mul, Ge, XTuple, Conditional, GetTupleElement
 using IRTools: IR, xcall, argument!
 
 @test collect(Add()([1, 2, 3], [4, 5, 6])) == [5, 7, 9]
@@ -39,6 +40,11 @@ push!(ir, 5)
 ir = IR()
 push!(ir, ())
 @test compile(ir)() == ()
+
+ir = IR()
+x = argument!(ir, (Int, Int))
+push!(ir, xcall(GetTupleElement(1), x))
+@test compile(ir)((1, 2)) == 2
 
 ir = IR()
 push!(ir, xcall(XTuple(), argument!(ir, Int), argument!(ir, Int)))
