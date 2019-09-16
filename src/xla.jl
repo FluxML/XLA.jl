@@ -12,20 +12,23 @@ const numpy2julia = Dict(v => k for (k, v) in julia2numpy)
 numpytype(T) = xlaclient.np.dtype(julia2numpy[T])
 juliatype(T) = numpy2julia[T.name]
 
+# Shapes
+
 struct Shape{T,N}
   dims::NTuple{N,Int}
 end
 
 Shape(T::Type{<:XScalar}, sh::NTuple{N,Integer}) where N = Shape{T,N}(sh)
 
-Shape(x::AbstractArray) = Shape{eltype(x),ndims(x)}(size(x))
+shapeof(x::AbstractArray) = Shape{eltype(x),ndims(x)}(size(x))
 
 Base.eltype(::Shape{T}) where T = T
 Base.ndims(::Shape{T,N}) where {T,N} = N
 
 PyObject(sh::Shape) = xlaclient.Shape.array_shape(numpytype(eltype(sh)), sh.dims)
+pyshape(sh::Shape) = PyObject(sh)
 
-Base.show(io::IO, sh::Shape) = print(io, eltype(sh), sh.dims)
+Base.show(io::IO, sh::Shape) = print(io, eltype(sh), "[", join(sh.dims, ","), "]")
 
 function Shape(sh::PyObject)
   T = juliatype(sh.numpy_dtype())
@@ -33,11 +36,17 @@ function Shape(sh::PyObject)
   Shape{T,length(size)}(size)
 end
 
+shapeof(p::PyObject) = p.is_array() ? Shape(p) : (shapeof.(p.tuple_shapes())...,)
+
+pyshape(x::Tuple) = xlaclient.Shape.tuple_shape(pyshape.(x))
+
+# Values
+
 struct XArray{T,N} <: AbstractArray{T,N}
   buffer::PyObject
 end
 
-function setup_finaliser(x::XArray)
+function setup_finaliser(x)
   delete = x.buffer.delete # work around a segfault on exit
   finalizer(buf -> ispynull(delete) || delete(), x.buffer)
 end
@@ -64,6 +73,11 @@ Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 
 xla(x::XArray) = x
 xla(x::AbstractArray) = XArray(x)
+xla(x::Tuple) = xla.(x)
+
+function wrapvalue(p::PyObject)
+  p.shape().is_tuple() ? (julia.(p.destructure())...,) : XArray(p)
+end
 
 # Operation Wrappers
 
@@ -72,7 +86,7 @@ function run_direct(op, args...)
   b = xlaclient.ComputationBuilder("")
   arg_ops = [b.ParameterWithShape(Shape(arg)) for arg in args]
   getproperty(b, op)(arg_ops...)
-  b.Build().Compile().Execute(args) |> XArray
+  b.Build().Compile().Execute(args) |> wrapvalue
 end
 
 for op in :[Neg, Sign, Floor, Ceil, Round, Exp, Log, Expm1, Log1p, Tanh,
@@ -111,7 +125,7 @@ function build(ir::IR)
   resolve(x::Variable) = env[x]
   resolve(x) = x
   for (v, T) in zip(arguments(ir), argtypes(ir))
-    env[v] = builder.ParameterWithShape(T::Shape)
+    env[v] = builder.ParameterWithShape(pyshape(T))
   end
   for (v, st) in ir
     if isexpr(st.expr, :call)
@@ -125,5 +139,5 @@ end
 
 function compile(ir::IR)
   comp = build(ir).Compile()
-  return (xs...) -> XArray(comp.Execute(xla.(xs)))
+  return (xs...) -> wrapvalue(comp.Execute(xla.(xs)))
 end
