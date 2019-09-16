@@ -83,7 +83,7 @@ xla(x::Number) = XArray(fill(x))
 xla(x::Tuple) = xla.(x)
 
 function wrapvalue(p::PyObject)
-  p.shape().is_tuple() ? (julia.(p.destructure())...,) : scalar(XArray(p))
+  p.shape().is_tuple() ? (wrapvalue.(p.destructure())...,) : scalar(XArray(p))
 end
 
 # IR Builder
@@ -97,12 +97,17 @@ function build(ir::IR)
     env[v] = builder.ParameterWithShape(pyshape(T))
   end
   for (v, st) in ir
-    if isexpr(st.expr, :call)
-      env[v] = build!(builder, st.expr.args[1], resolve.(st.expr.args[2:end])...)
-    elseif isexpr(st.expr)
-      error("Invalid XLA expression $(st.expr)")
+    ex = st.expr
+    if isexpr(ex, :call)
+      env[v] = build!(builder, ex.args[1], resolve.(ex.args[2:end])...)
+    elseif ex isa IR
+      env[v] = build(ex)
+    # elseif isexpr(ex, :lambda)
+    #   env[v] = Lambda(resolve.(ex.args[2:end]), ex.args[1])
+    elseif isexpr(ex)
+      error("Invalid XLA expression $(ex)")
     else
-      env[v] = const!(builder, st.expr)
+      env[v] = const!(builder, ex)
     end
   end
   return builder.Build()

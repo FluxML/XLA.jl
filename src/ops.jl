@@ -1,4 +1,5 @@
-const!(builder, x) = builder.Constant(x)
+const!(builder, x::Union{AbstractArray,XScalar}) = builder.Constant(x)
+const!(builder, x::Tuple{}) = builder.Tuple()
 
 struct Lambda
   vars::Vector{Any}
@@ -32,10 +33,17 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem,
   end
 end
 
+struct XTuple end
+
+build!(builder, ::XTuple, xs...) = builder.Tuple(xs...)
+
 struct Conditional end
 
-build!(builder, ::Conditional, pred, true_operand, true_computation, false_operand, false_computation) =
-  builder.Conditional(pred, true_operand, true_computation, false_operand, false_computation)
+build!(builder, ::Conditional, pred,
+       true_operand, true_computation,
+       false_operand, false_computation) =
+  builder.Conditional(pred, true_operand, true_computation,
+                            false_operand, false_computation)
 
 struct While end
 
