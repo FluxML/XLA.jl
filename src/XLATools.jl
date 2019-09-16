@@ -1,6 +1,7 @@
 module XLATools
 
-using PyCall
+using IRTools, PyCall
+using IRTools: IR, Variable, xcall, argument!, arguments, argtypes, isexpr
 
 function __init__()
   @eval const xlaclient = pyimport("jaxlib.xla_client")

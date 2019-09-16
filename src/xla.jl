@@ -16,12 +16,16 @@ struct Shape{T,N}
   dims::NTuple{N,Int}
 end
 
+Shape(T::Type{<:XScalar}, sh::NTuple{N,Integer}) where N = Shape{T,N}(sh)
+
 Shape(x::AbstractArray) = Shape{eltype(x),ndims(x)}(size(x))
 
 Base.eltype(::Shape{T}) where T = T
 Base.ndims(::Shape{T,N}) where {T,N} = N
 
 PyObject(sh::Shape) = xlaclient.Shape.array_shape(numpytype(eltype(sh)), sh.dims)
+
+Base.show(io::IO, sh::Shape) = print(io, eltype(sh), sh.dims)
 
 function Shape(sh::PyObject)
   T = juliatype(sh.numpy_dtype())
@@ -57,3 +61,41 @@ PyObject(x::XArray) = x.buffer
 Base.size(x::XArray) = x.buffer.shape().dimensions()
 Base.collect(x::XArray) = x.buffer.to_py()
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
+
+xla(x::XArray) = x
+xla(x::AbstractArray) = XArray(x)
+
+# Operation Wrappers
+
+struct Neg end
+
+build!(builder, ::Neg, x) = builder.Neg(x)
+
+struct Add end
+
+build!(builder, ::Add, x, y) = builder.Add(x, y)
+
+# IR Builder
+
+function build(ir::IR)
+  builder = xlaclient.ComputationBuilder("")
+  env = Dict()
+  resolve(x::Variable) = env[x]
+  resolve(x) = x
+  for (v, T) in zip(arguments(ir), argtypes(ir))
+    env[v] = builder.ParameterWithShape(T::Shape)
+  end
+  for (v, st) in ir
+    if isexpr(st.expr, :call)
+      env[v] = build!(builder, resolve.(st.expr.args)...)
+    else
+      error("Invalid XLA expression $(st.expr)")
+    end
+  end
+  return builder.Build()
+end
+
+function compile(ir::IR)
+  comp = build(ir).Compile()
+  return (xs...) -> XArray(comp.Execute(xla.(xs)))
+end
