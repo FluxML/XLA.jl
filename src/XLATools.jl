@@ -9,5 +9,6 @@ function __init__()
 end
 
 include("xla.jl")
+include("ops.jl")
 
 end # module
