@@ -41,6 +41,8 @@ shapeof(p::PyObject) = p.is_array() ? Shape(p) : (shapeof.(p.tuple_shapes())...,
 
 pyshape(x::Tuple) = xlaclient.Shape.tuple_shape(pyshape.(x))
 
+pyshape(x::Type{<:XScalar}) = pyshape(Shape(x, ()))
+
 # Values
 
 struct XArray{T,N} <: AbstractArray{T,N}
@@ -97,8 +99,10 @@ function build(ir::IR)
   for (v, st) in ir
     if isexpr(st.expr, :call)
       env[v] = build!(builder, st.expr.args[1], resolve.(st.expr.args[2:end])...)
-    else
+    elseif isexpr(st.expr)
       error("Invalid XLA expression $(st.expr)")
+    else
+      env[v] = const!(builder, st.expr)
     end
   end
   return builder.Build()
