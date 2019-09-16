@@ -93,6 +93,16 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem,
   end
 end
 
+struct Conditional end
+
+build!(builder, ::Conditional, true_operand, true_computation, false_operand, false_computation) =
+  builder.Conditional(pred, true_operand, true_computation, false_operand, false_computation)
+
+struct While end
+
+build!(builder, ::While, condition, body, init) =
+  builder.While(condition, body, init)
+
 # IR Builder
 
 function build(ir::IR)
