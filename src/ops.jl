@@ -1,3 +1,5 @@
+const!(builder, x) = builder.Constant(x)
+
 struct Lambda
   vars::Vector{Any}
   func::IR

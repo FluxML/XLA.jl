@@ -71,12 +71,16 @@ Base.size(x::XArray) = x.buffer.shape().dimensions()
 Base.collect(x::XArray) = x.buffer.to_py()
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 
+scalar(x::XArray{T,0}) where T = collect(x)[]
+scalar(x::XArray) = x
+
 xla(x::XArray) = x
 xla(x::AbstractArray) = XArray(x)
+xla(x::Number) = XArray(fill(x))
 xla(x::Tuple) = xla.(x)
 
 function wrapvalue(p::PyObject)
-  p.shape().is_tuple() ? (julia.(p.destructure())...,) : XArray(p)
+  p.shape().is_tuple() ? (julia.(p.destructure())...,) : scalar(XArray(p))
 end
 
 # IR Builder
@@ -85,13 +89,13 @@ function build(ir::IR)
   builder = xlaclient.ComputationBuilder("")
   env = Dict()
   resolve(x::Variable) = env[x]
-  resolve(x) = x
+  resolve(x) = const!(builder, x)
   for (v, T) in zip(arguments(ir), argtypes(ir))
     env[v] = builder.ParameterWithShape(pyshape(T))
   end
   for (v, st) in ir
     if isexpr(st.expr, :call)
-      env[v] = build!(builder, resolve.(st.expr.args)...)
+      env[v] = build!(builder, st.expr.args[1], resolve.(st.expr.args[2:end])...)
     else
       error("Invalid XLA expression $(st.expr)")
     end
