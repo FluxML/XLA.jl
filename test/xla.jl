@@ -1,6 +1,6 @@
 using XLATools, Test
 using XLATools: XArray, Shape, xlaclient, compile
-using XLATools: Add, Neg, Mul, Ge, XTuple, Conditional, GetTupleElement
+using XLATools: Add, Neg, Mul, Sub, Ge, Gt, XTuple, Conditional, While, GetTupleElement
 using IRTools: IR, xcall, argument!
 
 @test collect(Add()([1, 2, 3], [4, 5, 6])) == [5, 7, 9]
@@ -69,3 +69,32 @@ end
 
 @test relu(5) == 5
 @test relu(-5) == 0
+
+ir = IR()
+x = argument!(ir, Int)
+n = argument!(ir, Int)
+xnr = push!(ir, xcall(XTuple(), x, n, 1))
+cond = let ir = IR()
+  xnr = argument!(ir, (Int,Int,Int))
+  n = push!(ir, xcall(GetTupleElement(1), xnr))
+  push!(ir, xcall(Gt(), n, 0))
+  ir
+end
+cond = push!(ir, cond)
+body = let ir = IR()
+  xnr = argument!(ir, (Int,Int,Int))
+  x = push!(ir, xcall(GetTupleElement(0), xnr))
+  n = push!(ir, xcall(GetTupleElement(1), xnr))
+  r = push!(ir, xcall(GetTupleElement(2), xnr))
+  n = push!(ir, xcall(Sub(), n, 1))
+  r = push!(ir, xcall(Mul(), x, r))
+  xnr = push!(ir, xcall(XTuple(), x, n, r))
+  ir
+end
+body = push!(ir, body)
+xnr = push!(ir, xcall(While(), cond, body, xnr))
+push!(ir, xcall(GetTupleElement(2), xnr))
+pow = compile(ir)
+
+@test pow(2, 3) == 2^3
+@test pow(5, 10) == 5^10
