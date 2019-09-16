@@ -8,13 +8,13 @@ end
 function run_direct(op, args...)
   args = xla.(args)
   b = xlaclient.ComputationBuilder("")
-  arg_ops = [b.ParameterWithShape(Shape(arg)) for arg in args]
+  arg_ops = [b.ParameterWithShape(shapeof(arg)) for arg in args]
   getproperty(b, op)(arg_ops...)
   b.Build().Compile().Execute(args) |> wrapvalue
 end
 
 for op in :[Neg, Sign, Floor, Ceil, Round, Exp, Log, Expm1, Log1p, Tanh,
-    Sin, Cos, Lgamma, Digamma, Erf, Erfc, ErfInv, Sqrt, Rsqrt, Not].args
+            Sin, Cos, Lgamma, Digamma, Erf, Erfc, ErfInv, Sqrt, Rsqrt, Not].args
   @eval begin
     struct $op end
     build!(builder, ::$op, x) = getproperty(builder, $(Expr(:quote, op)))(x)
@@ -23,7 +23,8 @@ for op in :[Neg, Sign, Floor, Ceil, Round, Exp, Log, Expm1, Log1p, Tanh,
 end
 
 for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem,
-    Max, Min, ShiftLeft, ShiftRightArithmetic, ShiftRightLogical].args
+            Max, Min, ShiftLeft, ShiftRightArithmetic, ShiftRightLogical,
+            Gt, Ge, Lt, Le].args
   @eval begin
     struct $op end
     build!(builder, ::$op, x, y) = getproperty(builder, $(Expr(:quote, op)))(x, y)

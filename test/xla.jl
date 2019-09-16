@@ -2,6 +2,8 @@ using XLATools, Test
 using XLATools: XArray, Shape, Add, Neg, Mul, xlaclient, compile
 using IRTools: IR, xcall, argument!
 
+@test collect(Add()([1, 2, 3], [4, 5, 6])) == [5, 7, 9]
+
 ir = IR()
 x = argument!(ir, Shape(Int, (3,)))
 push!(ir, xcall(Neg(), x))

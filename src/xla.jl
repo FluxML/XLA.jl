@@ -5,7 +5,8 @@ const XScalar = Union{Float64,Float32,Float16,Int64,Int32,Int16}
 const julia2numpy = Dict(
   Float64 => "float64",
   Float32 => "float32",
-  Int64   => "int64")
+  Int64   => "int64",
+  Bool    => "bool")
 
 const numpy2julia = Dict(v => k for (k, v) in julia2numpy)
 
