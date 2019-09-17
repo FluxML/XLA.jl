@@ -5,6 +5,8 @@ using IRTools: IR, xcall, argument!
 
 @test collect(Add()([1, 2, 3], [4, 5, 6])) == [5, 7, 9]
 
+@test GetTupleElement(1)((3, 4)) == 4
+
 ir = IR()
 x = argument!(ir, Shape(Int, (3,)))
 push!(ir, xcall(Neg(), x))
