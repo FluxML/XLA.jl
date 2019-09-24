@@ -60,5 +60,8 @@ end
 
 struct While end
 
-build!(builder, ::While, condition, body, init) =
+function build!(builder, ::While, condition, body, init)
+  settypes!(builder, condition, init)
+  settypes!(builder, body, init)
   builder.While(build(condition), build(body), init)
+end
