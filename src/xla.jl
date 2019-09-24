@@ -88,6 +88,12 @@ end
 
 # IR Builder
 
+function settypes!(builder, comp::IR, ops...)
+  Ts = map(op -> shapeof(builder.GetShape(op)), ops)
+  argtypes(comp)[:] = [Ts...]
+  return comp
+end
+
 function build(ir::IR)
   builder = xlaclient.ComputationBuilder("")
   env = Dict()
@@ -101,9 +107,7 @@ function build(ir::IR)
     if isexpr(ex, :call)
       env[v] = build!(builder, ex.args[1], resolve.(ex.args[2:end])...)
     elseif ex isa IR
-      env[v] = build(ex)
-    # elseif isexpr(ex, :lambda)
-    #   env[v] = Lambda(resolve.(ex.args[2:end]), ex.args[1])
+      env[v] = ex
     elseif isexpr(ex)
       error("Invalid XLA expression $(ex)")
     else

@@ -49,13 +49,16 @@ build!(builder, op::GetTupleElement, x) = builder.GetTupleElement(x, op.idx)
 
 struct Conditional end
 
-build!(builder, ::Conditional, pred,
-       true_operand, true_computation,
-       false_operand, false_computation) =
-  builder.Conditional(pred, true_operand, true_computation,
-                            false_operand, false_computation)
+function build!(builder, ::Conditional, pred,
+                true_operand, true_computation,
+                false_operand, false_computation)
+  settypes!(builder, true_computation, true_operand)
+  settypes!(builder, false_computation, false_operand)
+  builder.Conditional(pred, true_operand, build(true_computation),
+                            false_operand, build(false_computation))
+end
 
 struct While end
 
 build!(builder, ::While, condition, body, init) =
-  builder.While(condition, body, init)
+  builder.While(build(condition), build(body), init)

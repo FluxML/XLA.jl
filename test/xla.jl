@@ -1,4 +1,4 @@
-using XLATools, Test
+using XLATools, IRTools, Test
 using XLATools: XArray, Shape, xlaclient, compile
 using XLATools: Add, Neg, Mul, Sub, Ge, Gt, XTuple, Conditional, While, GetTupleElement
 using IRTools: IR, xcall, argument!
@@ -100,3 +100,21 @@ pow = compile(ir)
 
 @test pow(2, 3) == 2^3
 @test pow(5, 10) == 5^10
+
+@eval relu = x -> $(Gt())(x, 0) ? x : 0
+ir = @code_ir relu(1)
+IRTools.argtypes(ir)[:] = [(), Int]
+ir = XLATools.controlflow(ir)
+
+f = compile(ir)
+@test f((), 5) == 5
+@test f((), -5) == 0
+
+@eval relu = x -> $(Gt())(x, 0) ? $(Mul())(2, x) : $(Mul())(3, x)
+ir = @code_ir relu(1)
+IRTools.argtypes(ir)[:] = [(), Int]
+ir = XLATools.controlflow(ir)
+
+f = compile(ir)
+@test f((), 5) == 10
+@test f((), -5) == -15
