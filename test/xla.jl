@@ -104,7 +104,6 @@ pow = compile(ir)
 @eval relu = x -> $(Gt())(x, 0) ? x : 0
 ir = @code_ir relu(1)
 IRTools.argtypes(ir)[:] = [(), Int]
-ir = XLATools.controlflow(ir)
 
 f = compile(ir)
 @test f((), 5) == 5
@@ -113,7 +112,6 @@ f = compile(ir)
 @eval relu = x -> $(Gt())(x, 0) ? $(Mul())(2, x) : $(Mul())(3, x)
 ir = @code_ir relu(1)
 IRTools.argtypes(ir)[:] = [(), Int]
-ir = XLATools.controlflow(ir)
 
 f = compile(ir)
 @test f((), 5) == 10
