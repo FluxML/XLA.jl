@@ -118,6 +118,7 @@ function build(ir::IR)
 end
 
 function compile(ir::IR)
+  ir = controlflow(ir)
   comp = build(ir).Compile()
   return (xs...) -> wrapvalue(comp.Execute(xlaclient.Buffer.from_pyval.(xs)))
 end

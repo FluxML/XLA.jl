@@ -83,6 +83,7 @@ function reloop(ir, cfg::IRTools.Simple)
 end
 
 function controlflow(ir::IR)
+  length(blocks(ir)) == 1 && return ir
   ir = ir |> copy |> explicitbranch! |> merge_returns! |> expand!
   cfg = IRTools.reloop(CFG(ir))
   reloop(ir, cfg)
