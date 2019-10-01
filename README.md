@@ -80,9 +80,6 @@ julia> ir = @code_ir relu(1)
 Compile it:
 
 ```julia
-julia> f((), 1), f((), -1)
-(1, 0)
-
 julia> IRTools.argtypes(ir)[:] = [(), Int]
 2-element Array{Any,1}:
  ()   
@@ -90,6 +87,9 @@ julia> IRTools.argtypes(ir)[:] = [(), Int]
 
 julia> f = compile(ir)
 #10 (generic function with 1 method)
+
+julia> f((), 1), f((), -1)
+(1, 0)
 ```
 
 If you're familiar with XLA you might notice that we're not using its "functional" control flow here, but instead normal SSA branches. The idea is to abstract over XLA's _somewhat idiosyncratic_ `Conditional` and `While` with something more convenient, that gets lowered to those calls when compiling. It's easy to see what the native equivalent looks like:
