@@ -3,8 +3,7 @@
 XLATools provides access to [XLA and the XRT runtime](https://www.tensorflow.org/xla), including the ability to build and compile XLA computations using the [IRTools](https://github.com/MikeInnes/IRTools.jl) format.
 
 ```julia
-] add IRTools#master
-] add https://github.com/MikeInnes/XLATools.jl
+] add IRTools#master https://github.com/MikeInnes/XLATools.jl
 ```
 
 Run XLA ops directly (slow but useful for testing/debugging):
