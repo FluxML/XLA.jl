@@ -57,4 +57,56 @@ julia> f(5)
 86
 ```
 
+Writing IR by hand is a bit tedious; we can actually use Julia to do most of the work for us.
+
+```julia
+julia> @eval relu = x -> $(Gt())(x, 0) ? x : 0
+#15 (generic function with 1 method)
+
+julia> ir = @code_ir relu(1)
+1: (%1, %2)
+  %3 = (Gt())(%2, 0)
+  br 2 unless %3
+  return %2
+2:
+  return 0
+```
+
+Compile it:
+
+```julia
+julia> f((), 1), f((), -1)
+(1, 0)
+
+julia> IRTools.argtypes(ir)[:] = [(), Int]
+2-element Array{Any,1}:
+ ()   
+ Int64
+
+julia> f = compile(ir)
+#10 (generic function with 1 method)
+```
+
+If you're familiar with XLA you might notice that we're not using its "functional" control flow here, but instead normal SSA branches. The idea is to abstract over XLA's _somewhat idiosyncratic_ `Conditional` and `While` with something more convenient, that gets lowered to those calls when compiling. It's easy to see what the native equivalent looks like:
+
+```julia
+julia> XLATools.controlflow(ir)
+1: (%1 :: (), %2 :: Int64)
+  %3 = (Gt())(%2, 0)
+  %4 = (XLATools.Not())(%3)
+  %5 =
+    1: (%1)
+      %2 = (XTuple())(0)
+  %6 =
+    1: (%1)
+  %7 = (XTuple())()
+  %8 = (XTuple())(%2)
+  %9 = (Conditional())(%4, %7, %5, %8, %6)
+  %10 = (GetTupleElement(0))(%9)
+```
+
+Right now only `Conditional`s are supported, but support for `While` is planned.
+
+XLATools' op support is not yet exhaustive, but new ops are easy to add. For example, the definition for `XTuple` is [only three lines](https://github.com/MikeInnes/XLATools.jl/blob/06e3fccdb2e714aab4b112f16da6ceae38e871ed/src/ops.jl#L36-L40).
+
 XLATools reuses [JAX's](https://github.com/google/jax) build of XLA via `pip`. A CPU-only build is installed by default; if you want GPU support you can [use your own python](https://github.com/JuliaPy/PyCall.jl#specifying-the-python-version) and install the GPU-enabled jaxlib as per the jax docs.
