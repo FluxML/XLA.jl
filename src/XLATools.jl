@@ -5,7 +5,6 @@ using IRTools.Inner: entry
 
 function __init__()
   global xlaclient = pyimport("jaxlib.xla_client")
-  global xrt = pyimport("jaxlib.xrt")
 end
 
 include("reloop.jl")
