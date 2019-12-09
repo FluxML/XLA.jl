@@ -114,6 +114,11 @@ function build(ir::IR)
       env[v] = const!(builder, ex)
     end
   end
+  if isreturn(blocks(ir)[end])
+    ret = returnvalue(blocks(ir)[end])
+    # TODO handle the variable case
+    !(ret isa Variable) && const!(builder, ret)
+  end
   return builder.Build()
 end
 
