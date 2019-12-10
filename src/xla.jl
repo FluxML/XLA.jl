@@ -79,7 +79,7 @@ scalar(x::XArray{T,0}) where T = collect(x)[]
 scalar(x::XArray) = x
 
 xla(x::XArray) = x
-xla(x::AbstractArray) = XArray(x)
+xla(x::AbstractArray{<:XScalar}) = XArray(x)
 xla(x::Number) = XArray(fill(x))
 xla(x::Tuple) = xla.(x)
 
