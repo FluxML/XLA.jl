@@ -23,7 +23,7 @@ for op in :[Neg, Sign, Floor, Ceil, Round, Exp, Log, Expm1, Log1p, Tanh,
   end
 end
 
-for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem,
+for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem, Dot,
             Max, Min, ShiftLeft, ShiftRightArithmetic, ShiftRightLogical,
             Gt, Ge, Lt, Le].args
   @eval begin
