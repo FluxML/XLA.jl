@@ -73,6 +73,7 @@ PyObject(x::XArray) = x.buffer
 Base.size(x::XArray) = x.buffer.shape().dimensions()
 Base.collect(x::XArray) = x.buffer.to_py()
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
+Base.show_vector(io::IO, x::XArray) = Base.show_vector(io, collect(x))
 
 scalar(x::XArray{T,0}) where T = collect(x)[]
 scalar(x::XArray) = x
