@@ -8,7 +8,7 @@ function __init__()
 end
 
 include("reloop.jl")
-include("xla.jl")
+include("builder.jl")
 include("ops.jl")
 
 end # module
