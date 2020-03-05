@@ -52,25 +52,27 @@ ir = IR()
 push!(ir, xcall(XTuple(), argument!(ir, Int), argument!(ir, Int)))
 @test compile(ir)(1, 2) == (1, 2)
 
-relu = let
-  ir = IR()
-  x = argument!(ir, Int)
-  cond = push!(ir, xcall(Ge(), x, 0))
+let
+  relu = let
+    ir = IR()
+    x = argument!(ir, Int)
+    cond = push!(ir, xcall(Ge(), x, 0))
 
-  tb = IR()
-  x = argument!(tb)
-  t = push!(ir, tb)
-  fb = IR()
-  argument!(fb)
-  push!(fb, 0)
-  f = push!(ir, fb)
+    tb = IR()
+    x = argument!(tb)
+    t = push!(ir, tb)
+    fb = IR()
+    argument!(fb)
+    push!(fb, 0)
+    f = push!(ir, fb)
 
-  push!(ir, xcall(Conditional(), cond, x, t, (), f))
-  compile(ir)
+    push!(ir, xcall(Conditional(), cond, x, t, (), f))
+    compile(ir)
+  end
+
+  @test relu(5) == 5
+  @test relu(-5) == 0
 end
-
-@test relu(5) == 5
-@test relu(-5) == 0
 
 ir = IR()
 x = argument!(ir, Int)
@@ -101,18 +103,22 @@ pow = compile(ir)
 @test pow(2, 3) == 2^3
 @test pow(5, 10) == 5^10
 
-@eval relu = x -> $(Gt())(x, 0) ? x : 0
-ir = @code_ir relu(1)
-IRTools.argtypes(ir)[:] = [(), Int]
+let
+  @eval relu(x) = $(Gt())(x, 0) ? x : 0
+  ir = @code_ir relu(1)
+  IRTools.argtypes(ir)[:] = [(), Int]
 
-f = compile(ir)
-@test f((), 5) == 5
-@test f((), -5) == 0
+  f = compile(ir)
+  @test f((), 5) == 5
+  @test f((), -5) == 0
+end
 
-@eval relu = x -> $(Gt())(x, 0) ? $(Mul())(2, x) : $(Mul())(3, x)
-ir = @code_ir relu(1)
-IRTools.argtypes(ir)[:] = [(), Int]
+let
+  @eval relu(x) = $(Gt())(x, 0) ? $(Mul())(2, x) : $(Mul())(3, x)
+  ir = @code_ir relu(1)
+  IRTools.argtypes(ir)[:] = [(), Int]
 
-f = compile(ir)
-@test f((), 5) == 10
-@test f((), -5) == -15
+  f = compile(ir)
+  @test f((), 5) == 10
+  @test f((), -5) == -15
+end
