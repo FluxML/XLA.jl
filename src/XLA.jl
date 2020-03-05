@@ -1,4 +1,4 @@
-module XLATools
+module XLA
 
 using IRTools, IRTools.All, PyCall
 using IRTools.Inner: entry

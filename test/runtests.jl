@@ -1,6 +1,6 @@
-using XLATools, Test
+using XLA, Test
 
-@testset "XLATools" begin
+@testset "XLA" begin
 
 @testset "XLA IR" begin
   include("xla.jl")

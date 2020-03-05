@@ -1,4 +1,4 @@
-using XLATools, Test
+using XLA, Test
 
 double(x) = xla(() -> x+x)
 
@@ -10,7 +10,7 @@ let x = 2, y = 2.0
 end
 
 add(a, b) = a+b
-@test @code_xla(add(2, 3)) isa XLATools.IR
+@test @code_xla(add(2, 3)) isa XLA.IR
 
 @test xla(() -> 2+2) == 4
 

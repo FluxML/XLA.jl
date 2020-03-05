@@ -8,13 +8,13 @@ layout(x::Array) = Shape(eltype(x), size(x))
 
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
   @eval xlaop(args, ::AType{typeof($op)}, _, _) =
-          xcall(XLATools.$xop(), args[2:end]...)
+          xcall(XLA.$xop(), args[2:end]...)
 end
 
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 
 xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
-  Expr(:call, XLATools.GetTupleElement(fieldnum(T, f.value)-1), args[2])
+  Expr(:call, XLA.GetTupleElement(fieldnum(T, f.value)-1), args[2])
 
 function xlaops!(ir)
   for (v, st) in ir

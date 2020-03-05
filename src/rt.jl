@@ -15,7 +15,7 @@ function xla(f)
   else
     ir = trace(Defaults(), typeof(f))
     ir = convert_xla!(ir, (f,))
-    xla_f = cache[key] = XLATools.compile(ir)
+    xla_f = cache[key] = XLA.compile(ir)
   end
   return xla_f(toxla(f))
 end

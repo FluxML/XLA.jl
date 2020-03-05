@@ -1,4 +1,4 @@
-name = "XLATools"
+name = "XLA"
 uuid = "e639e2dd-7a4d-472e-a96e-206d6a26373c"
 authors = ["Mike J Innes <mike.j.innes@gmail.com>"]
 version = "0.1.0"

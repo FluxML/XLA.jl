@@ -1,31 +1,31 @@
-# XLATools
+# XLA
 
-[![Build Status](https://travis-ci.org/MikeInnes/XLATools.jl.svg?branch=master)](https://travis-ci.org/MikeInnes/XLATools.jl)
+[![Build Status](https://travis-ci.org/MikeInnes/XLA.jl.svg?branch=master)](https://travis-ci.org/MikeInnes/XLA.jl)
 
-XLATools provides access to [XLA and the XRT runtime](https://www.tensorflow.org/xla), including the ability to build and compile XLA computations using the [IRTools](https://github.com/MikeInnes/IRTools.jl) format.
+XLA provides access to [XLA and the XRT runtime](https://www.tensorflow.org/xla), including the ability to build and compile XLA computations using the [IRTools](https://github.com/MikeInnes/IRTools.jl) format.
 
 ```julia
-] add IRTools#master https://github.com/MikeInnes/XLATools.jl
+] add IRTools#master https://github.com/MikeInnes/XLA.jl
 ```
 
 Run XLA ops directly (slow but useful for testing/debugging):
 
 ```julia
-julia> using XLATools
+julia> using XLA
 
-julia> XLATools.Mul()(2, 3)
+julia> XLA.Mul()(2, 3)
 2019-09-17 14:29:42.711650: I external/org_tensorflow/tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 3600000000 Hz
 ...
 6
 
-julia> t = XLATools.XTuple()(5, 6)
+julia> t = XLA.XTuple()(5, 6)
 (5, 6)
 
-julia> XLATools.GetTupleElement(0)(t)
+julia> XLA.GetTupleElement(0)(t)
 5
 
-julia> XLATools.Add()([1, 2], [3, 4])
-2-element XLATools.XArray{Int64,1}:
+julia> XLA.Add()([1, 2], [3, 4])
+2-element XLA.XArray{Int64,1}:
  4
  6
 ```
@@ -35,7 +35,7 @@ Ops are named as in XLA proper (see the [reference](https://www.tensorflow.org/x
 Build and invoke a simple computation, the polynomial `3x^2 + 2x + 1`:
 
 ```julia
-julia> using XLATools: Mul, Add, Pow, compile
+julia> using XLA: Mul, Add, Pow, compile
 
 julia> using IRTools: IR, argument!, xcall
 
@@ -96,10 +96,10 @@ julia> f((), 1), f((), -1)
 If you're familiar with XLA you might notice that we're not using its "functional" control flow here, but instead normal SSA branches. The idea is to abstract over XLA's _somewhat idiosyncratic_ `Conditional` and `While` with something more convenient, that gets lowered to those calls when compiling. It's easy to see what the native equivalent looks like:
 
 ```julia
-julia> XLATools.controlflow(ir)
+julia> XLA.controlflow(ir)
 1: (%1 :: (), %2 :: Int64)
   %3 = (Gt())(%2, 0)
-  %4 = (XLATools.Not())(%3)
+  %4 = (XLA.Not())(%3)
   %5 =
     1: (%1)
       %2 = (XTuple())(0)
@@ -113,6 +113,6 @@ julia> XLATools.controlflow(ir)
 
 Right now only `Conditional`s are supported, but support for `While` is planned.
 
-XLATools' op support is not yet exhaustive, but new ops are easy to add. For example, the definition for `XTuple` is [only three lines](https://github.com/MikeInnes/XLATools.jl/blob/06e3fccdb2e714aab4b112f16da6ceae38e871ed/src/ops.jl#L36-L40).
+XLA' op support is not yet exhaustive, but new ops are easy to add. For example, the definition for `XTuple` is [only three lines](https://github.com/MikeInnes/XLA.jl/blob/06e3fccdb2e714aab4b112f16da6ceae38e871ed/src/ops.jl#L36-L40).
 
-XLATools reuses [JAX's](https://github.com/google/jax) build of XLA via `pip`. A CPU-only build is installed by default; if you want GPU support you can [use your own python](https://github.com/JuliaPy/PyCall.jl#specifying-the-python-version) and install the GPU-enabled jaxlib as per the jax docs.
+XLA reuses [JAX's](https://github.com/google/jax) build of XLA via `pip`. A CPU-only build is installed by default; if you want GPU support you can [use your own python](https://github.com/JuliaPy/PyCall.jl#specifying-the-python-version) and install the GPU-enabled jaxlib as per the jax docs.
