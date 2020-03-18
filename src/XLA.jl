@@ -9,6 +9,7 @@ export @code_xla, xla
 
 function __init__()
   global xlaclient = pyimport("jaxlib.xla_client")
+  PyCall.npyinitialize()
 end
 
 include("reloop.jl")
