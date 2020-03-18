@@ -1,6 +1,6 @@
 module XLA
 
-using IRTools, IRTools.All, PyCall
+using IRTools, IRTools.All, PyCall, Mjolnir
 using IRTools.Inner: entry
 using MacroTools: @capture
 using Mjolnir: Defaults, AType, Const, trace
