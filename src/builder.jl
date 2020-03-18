@@ -71,11 +71,11 @@ end
 PyObject(x::XArray) = x.buffer
 
 Base.size(x::XArray) = x.buffer.shape().dimensions()
-Base.collect(x::XArray) = x.buffer.to_py()
+Base.collect(x::XArray) = convert(Array, x.buffer.to_py())
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 Base.show_vector(io::IO, x::XArray) = Base.show_vector(io, collect(x))
 
-scalar(x::XArray{T,0}) where T = collect(x)[]
+scalar(x::XArray{T,0}) where T = get(x.buffer.to_py(), ())
 scalar(x::XArray) = x
 
 xla(x::XArray) = x
@@ -86,6 +86,12 @@ xla(x::Tuple) = xla.(x)
 function wrapvalue(p::PyObject)
   p.shape().is_tuple() ? (wrapvalue.(p.destructure())...,) : scalar(XArray(p))
 end
+
+default_device() = xlaclient.get_local_backend().devices()[1]
+
+buffer(x::Array{<:XScalar}) = xlaclient.Buffer.from_pyval(x)
+buffer(x::XScalar) = xlaclient.Buffer.from_pyval(x)
+buffer(xs::Tuple) = xlaclient.Buffer.make_tuple(buffer.(xs), default_device())
 
 # IR Builder
 
@@ -126,5 +132,5 @@ end
 function compile(ir::IR)
   ir = controlflow(ir)
   comp = build(ir).Compile()
-  return (xs...) -> wrapvalue(comp.Execute(xlaclient.Buffer.from_pyval.(xs)))
+  return (xs...) -> wrapvalue(comp.Execute(buffer.(xs)))
 end

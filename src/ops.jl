@@ -7,7 +7,7 @@ struct Lambda
 end
 
 function run(op, args...)
-  args = xlaclient.Buffer.from_pyval.(args)
+  args = buffer.(args)
   b = xlaclient.ComputationBuilder("")
   arg_ops = [b.ParameterWithShape(arg.shape()) for arg in args]
   build!(b, op, arg_ops...)
