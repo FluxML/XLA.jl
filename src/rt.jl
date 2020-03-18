@@ -6,16 +6,17 @@ toxla(x::XScalar) = x
 toxla(x::Array{<:XScalar}) = x
 toxla(x) = map(f -> toxla(getfield(x, f)), fieldnames(typeof(x)))
 
-const cache = IdDict()
-
 function xla(f)
-  key = typekey(f)
-  if haskey(cache, key)
-    xla_f = cache[key]
-  else
-    ir = trace(Defaults(), typeof(f))
-    ir = convert_xla!(ir, (f,))
-    xla_f = cache[key] = XLA.compile(ir)
+  cache = IdDict()
+  function (args...)
+    key = typekey(args)
+    if haskey(cache, key)
+      xla_f = cache[key]
+    else
+      ir = trace(Defaults(), typeof(f), typeof.(args)...)
+      ir = convert_xla!(ir, (f, args...))
+      xla_f = cache[key] = XLA.compile(ir)
+    end
+    return xla_f(toxla(f), toxla.(args)...)
   end
-  return xla_f(toxla(f))
 end
