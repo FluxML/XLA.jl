@@ -13,7 +13,7 @@ function xla(f)
     if haskey(cache, key)
       xla_f = cache[key]
     else
-      ir = trace(Defaults(), Const(f), typeof.(args)...)
+      ir = trace(Primitives(), Const(f), typeof.(args)...)
       ir = convert_xla!(ir, (f, args...))
       xla_f = cache[key] = XLA.compile(ir)
     end

@@ -1,14 +1,23 @@
+struct Operations end
+
+Primitives() = Multi(Operations(), Basic())
+
 exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 
 layout(x::XScalar) = typeof(x)
 layout(x) = map(f -> layout(getfield(x, f)), fieldnames(typeof(x)))
 layout(x::Array) = Shape(eltype(x), size(x))
 
-# TODO: arithmetic ops should implement promotion
-
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
+  @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
+    Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, _, _) =
           xcall(XLA.$xop(), args[2:end]...)
+end
+
+for (op, xop) in [(+, :Add), (-, :Sub)]
+  @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:Array{<:XScalar} =
+    Core.Compiler.return_type($op, Tuple{T,T})
 end
 
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
