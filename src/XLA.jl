@@ -12,11 +12,12 @@ function __init__()
   PyCall.npyinitialize()
 end
 
-include("reloop.jl")
-include("builder.jl")
-include("ops.jl")
-include("convert.jl")
-include("rt.jl")
+include("ir/reloop.jl")
+include("ir/builder.jl")
+include("ir/ops.jl")
+
+include("compile/convert.jl")
+include("compile/rt.jl")
 
 macro code_xla(ex)
   @capture(ex, f_(args__)) || error("@trace f(args...)")
