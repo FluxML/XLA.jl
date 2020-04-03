@@ -10,7 +10,7 @@ double = xla(x -> x + x)
 
 add = xla(add)
 
-@test_broken xla((a, b) -> a+b)(2, 2.0) == 4.0
+@test add(2, 2.0) == 4.0
 
 @test xla(() -> 2+2)() == 4
 

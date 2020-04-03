@@ -47,6 +47,15 @@ build!(builder, op::GetTupleElement, x) = builder.GetTupleElement(x, op.idx)
 
 (op::GetTupleElement)(xs...) = run(op, xs...)
 
+struct ConvertElementType
+  to::Type{<:XScalar}
+end
+
+build!(builder, op::ConvertElementType, x) =
+  builder.ConvertElementType(x, primitivetype(op.to))
+
+(op::ConvertElementType)(xs...) = run(op, xs...)
+
 struct Conditional end
 
 function build!(builder, ::Conditional, pred,

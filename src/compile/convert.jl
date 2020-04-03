@@ -8,11 +8,17 @@ layout(x::XScalar) = typeof(x)
 layout(x) = map(f -> layout(getfield(x, f)), fieldnames(typeof(x)))
 layout(x::Array) = Shape(eltype(x), size(x))
 
+abstract(::Operations, ::AType{typeof(convert)}, ::AType{Type{T}}, S::AType{<:XScalar}) where T<:XScalar =
+  widen(S) <: T ? S : T
+
+xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
+  xcall(ConvertElementType(T), args[3])
+
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
   @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, _, _) =
-          xcall(XLA.$xop(), args[2:end]...)
+          xcall($xop(), args[2:end]...)
 end
 
 for (op, xop) in [(+, :Add), (-, :Sub)]
@@ -23,7 +29,7 @@ end
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 
 xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
-  Expr(:call, XLA.GetTupleElement(fieldnum(T, f.value)-1), args[2])
+  Expr(:call, GetTupleElement(fieldnum(T, f.value)-1), args[2])
 
 function xlaops!(ir)
   for (v, st) in ir

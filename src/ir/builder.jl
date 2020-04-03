@@ -11,6 +11,7 @@ const julia2numpy = Dict(
 const numpy2julia = Dict(v => k for (k, v) in julia2numpy)
 
 numpytype(T) = xlaclient.np.dtype(julia2numpy[T])
+primitivetype(T) = xlaclient.dtype_to_etype(numpytype(T))
 juliatype(T) = numpy2julia[T.name]
 
 # Shapes
