@@ -23,7 +23,7 @@ macro code_xla(ex)
   @capture(ex, f_(args__)) || error("@trace f(args...)")
   quote
     tr = trace(Primitives(), Const($(esc(f))), typeof.(($(esc.(args)...),))...)
-    convert_xla!(tr, ($(esc(f)), $(esc.(args)...)))
+    convert_xla!(tr, ((), $(esc.(args)...)))
   end
 end
 

@@ -26,11 +26,16 @@ abstract(::Operations, ::AType{Type{T}}, S::AType{<:XScalar}) where T<:XScalar =
 xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
   xcall(ConvertElementType(T), args[3])
 
+xlaop(args, ::AType{typeof(Broadcast.broadcasted)}, ::AType{Type{T}}, _) where T<:XScalar =
+  xcall(ConvertElementType(T), args[3])
+
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
   @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
           xcall($xop(), args[2:end]...)
+  @eval xlaop(args, ::AType{typeof(Broadcast.broadcasted)}, ::AType{typeof($op)}, ::AType{<:Array{T}}, ::AType{<:Array{T}}) where T<:XScalar =
+    xcall($xop(), args[3:end]...)
 end
 
 for (op, xop) in [(+, :Add), (-, :Sub)]
@@ -40,6 +45,13 @@ for (op, xop) in [(+, :Add), (-, :Sub)]
           xcall($xop(), args[2:end]...)
 end
 
+abstract(::Operations, ::AType{typeof(Broadcast.broadcasted)}, ::AType{typeof(identity)}, x) = x
+
+abstract(::Operations, ::AType{typeof(*)}, a::AType{Matrix{T}}, b::AType{Vector{T}}) where T<:XScalar = Vector{T}
+
+xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
+  xcall(Dot(), args[2:end]...)
+
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 
 xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
@@ -47,6 +59,7 @@ xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
 
 function xlaops!(ir)
   for (v, st) in ir
+    st.expr isa Union{Array,Number} && continue
     ir[v] = xlaop(st.expr.args, exprtype.((ir,), st.expr.args)...)
   end
   return ir
