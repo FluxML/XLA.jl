@@ -3,7 +3,7 @@ module XLA
 using IRTools, IRTools.All, PyCall, Mjolnir
 using IRTools.Inner: entry
 using MacroTools: @capture
-import Mjolnir: AType, Multi, Basic, Const, trace, abstract, widen
+import Mjolnir: AType, Multi, Basic, Const, trace, abstract, instead, widen
 
 export @code_xla, xla
 

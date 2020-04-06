@@ -16,11 +16,12 @@ add = xla(add)
 
 @test xla(x -> 3x^(1+1) + (2x + 1))(5) == 86
 
-relu = xla(x -> x > 0 ? x : 0)
+relu = x -> x > 0 ? x : zero(x)
+xrelu = xla(relu)
 
-@test relu(5) == 5
-@test relu(-5) == 0
-@test_broken relu(5.0) == 5.0
+@test xrelu(5) == 5
+@test xrelu(-5) == 0
+@test xrelu(5.0) == 5.0
 
 let x = rand(3), y = rand(3)
   @test add(x, y) isa XLA.XArray
