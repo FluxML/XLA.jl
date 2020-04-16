@@ -15,9 +15,9 @@ else
       Python Dependencies not installed
       Please either:
        - Rebuild PyCall to use Conda, by running in the julia REPL:
-        - `using Pkg; ENV["PYTHON"]=""; Pkg.build("PyCall"); Pkg.build("XLA")`
-       - Or install the depencences, eg by running pip
-      	- `pip install jaxlib==$JAXLIB`
+         - `using Pkg; ENV["PYTHON"]=""; Pkg.build("PyCall"); Pkg.build("XLA")`
+       - Or install the depencencies, eg by running pip
+      	 - `pip install jaxlib==$JAXLIB`
     	""")
 	end
 end
