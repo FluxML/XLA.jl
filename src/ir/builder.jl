@@ -76,7 +76,9 @@ Base.collect(x::XArray) = convert(Array, x.buffer.to_py())
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 Base.show_vector(io::IO, x::XArray) = Base.show_vector(io, collect(x))
 
-scalar(x::XArray{T,0}) where T = x.buffer.to_py()[]
+scalar(x::PyObject) = get(x, ())
+scalar(x::Array) = x[]
+scalar(x::XArray{T,0}) where T = scalar(x.buffer.to_py()) # Array or PyObject? Seems to be random
 scalar(x::XArray) = x
 
 xla(x::XArray) = x
