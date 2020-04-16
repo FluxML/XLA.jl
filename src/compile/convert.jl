@@ -56,6 +56,9 @@ xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) wher
 
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 
+xlaop(args, ::AType{typeof(tuple)}, xs...) =
+  Expr(:call, XTuple(), args[2:end]...)
+
 xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
   Expr(:call, GetTupleElement(fieldnum(T, f.value)-1), args[2])
 
