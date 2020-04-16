@@ -76,7 +76,7 @@ Base.collect(x::XArray) = convert(Array, x.buffer.to_py())
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 Base.show_vector(io::IO, x::XArray) = Base.show_vector(io, collect(x))
 
-scalar(x::XArray{T,0}) where T = get(x.buffer.to_py(), ())
+scalar(x::XArray{T,0}) where T = x.buffer.to_py()[]
 scalar(x::XArray) = x
 
 xla(x::XArray) = x
@@ -106,6 +106,7 @@ function build(ir::IR)
   builder = xlaclient.ComputationBuilder("")
   env = Dict()
   resolve(x::Variable) = env[x]
+  resolve(x::QuoteNode) = const!(builder, x.value)
   resolve(x) = const!(builder, x)
   for (v, T) in zip(arguments(ir), argtypes(ir))
     env[v] = builder.ParameterWithShape(pyshape(T))
