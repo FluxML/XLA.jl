@@ -30,6 +30,8 @@ xlaop(args, ::AType{typeof(Broadcast.broadcasted)}, ::AType{Type{T}}, _) where T
   xcall(ConvertElementType(T), args[3])
 
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
+  @eval abstract(::Operations, ::AType{typeof($op)}, a::Const{T}, b::Const{T}) where T<:XScalar =
+    Const($op(a.value, b.value))
   @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
