@@ -98,8 +98,8 @@ buffer(xs::Tuple) = xlaclient.Buffer.make_tuple(buffer.(xs), default_device())
 
 # IR Builder
 
-function settypes!(builder, comp::IR, ops...)
-  Ts = map(op -> shapeof(builder.GetShape(op)), ops)
+function settypes!(builder, comp::IR, ops...; with = identity)
+  Ts = map(op -> with(shapeof(builder.GetShape(op))), ops)
   argtypes(comp)[:] = [Ts...]
   return comp
 end

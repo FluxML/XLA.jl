@@ -43,3 +43,13 @@ end
 
 @test relu(5) == 5
 @test relu(-5) == 0
+
+poly(x) = x^2 + 1
+
+poly(xs::AbstractArray) = poly.(xs)
+
+xpoly = xla(poly)
+
+@test xpoly(3) == 10
+
+@test collect(xpoly([1, 2, 3])) == [2, 5, 10]

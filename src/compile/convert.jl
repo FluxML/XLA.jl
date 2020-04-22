@@ -26,9 +26,6 @@ abstract(::Operations, ::AType{Type{T}}, S::AType{<:XScalar}) where T<:XScalar =
 xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
   xcall(ConvertElementType(T), args[3])
 
-xlaop(args, ::AType{typeof(Broadcast.broadcasted)}, ::AType{Type{T}}, _) where T<:XScalar =
-  xcall(ConvertElementType(T), args[3])
-
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
   @eval abstract(::Operations, ::AType{typeof($op)}, a::Const{T}, b::Const{T}) where T<:XScalar =
     Const($op(a.value, b.value))
@@ -36,8 +33,6 @@ for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
           xcall($xop(), args[2:end]...)
-  @eval xlaop(args, ::AType{typeof(Broadcast.broadcasted)}, ::AType{typeof($op)}, ::AType{<:Array{T}}, ::AType{<:Array{T}}) where T<:XScalar =
-    xcall($xop(), args[3:end]...)
 end
 
 for (op, xop) in [(+, :Add), (-, :Sub)]
@@ -47,7 +42,8 @@ for (op, xop) in [(+, :Add), (-, :Sub)]
           xcall($xop(), args[2:end]...)
 end
 
-abstract(::Operations, ::AType{typeof(Broadcast.broadcasted)}, ::AType{typeof(identity)}, x) = x
+xlaop(args, ::AType{typeof(broadcast)}, _...) =
+  Expr(:call, Map(), args[3:end]..., args[2])
 
 abstract(::Operations, ::AType{typeof(*)}, a::AType{Matrix{T}}, b::AType{Vector{T}}) where T<:XScalar = Vector{T}
 
@@ -62,10 +58,31 @@ xlaop(args, ::AType{typeof(tuple)}, xs...) =
 xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
   Expr(:call, GetTupleElement(fieldnum(T, f.value)-1), args[2])
 
+function strip_self_arg!(ir)
+  @assert exprtype(ir, arguments(ir)[1]) isa Const
+  deletearg!(ir, 1)
+  return ir
+end
+
+function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)
+  args = ir[v].expr.args
+  f = ir[args[2]].expr
+  strip_self_arg!(f)
+  ir[v] = Expr(:call, Map(), args[3:end]..., args[2])
+end
+
+function xlaop!(ir, v, args...)
+  ir[v] = xlaop(ir[v].expr.args, args...)
+end
+
 function xlaops!(ir)
   for (v, st) in ir
-    st.expr isa Union{Array,Number} && continue
-    ir[v] = xlaop(st.expr.args, exprtype.((ir,), st.expr.args)...)
+    if st.expr isa Union{Array,Number}
+    elseif st.expr isa IR
+      ir[v] = xlaops!(st.expr)
+    else
+      xlaop!(ir, v, exprtype.((ir,), st.expr.args)...)
+    end
   end
   return ir
 end
@@ -74,9 +91,6 @@ function convert_xla!(ir, T)
   xlaops!(ir)
   for i = 1:length(arguments(ir))
     argtypes(ir)[i] = layout(T[i])
-  end
-  for (v, st) in ir
-    ir[v] = stmt(st, type = Any)
   end
   return ir
 end

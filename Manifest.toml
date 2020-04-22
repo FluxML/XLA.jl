@@ -19,11 +19,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[IRTools]]
 deps = ["InteractiveUtils", "MacroTools", "Test"]
-git-tree-sha1 = "c21be8e40c8d19b436bb109e262e1f59ae981b0c"
-repo-rev = "master"
-repo-url = "https://github.com/MikeInnes/IRTools.jl.git"
+git-tree-sha1 = "8845400bd2d9815d37720251f1b53d27a335e1f4"
 uuid = "7869d1d1-7146-5819-86e3-90919afe41df"
-version = "0.3.1"
+version = "0.3.2"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
@@ -57,7 +55,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[Mjolnir]]
 deps = ["IRTools", "MacroTools"]
-git-tree-sha1 = "03960de744c96ff1152300a77302848cd1405d35"
+git-tree-sha1 = "4a51c02b967f3c9a476feba5132ed45e7a333036"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/Mjolnir.jl"
 uuid = "1154507a-7ac2-44fe-9f15-34617bca9db5"
@@ -68,9 +66,9 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[Parsers]]
 deps = ["Dates", "Test"]
-git-tree-sha1 = "75d07cb840c300084634b4991761886d0d762724"
+git-tree-sha1 = "f8f5d2d4b4b07342e5811d2b6428e45524e241df"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "1.0.1"
+version = "1.0.2"
 
 [[Printf]]
 deps = ["Unicode"]

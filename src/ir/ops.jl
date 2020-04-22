@@ -33,6 +33,15 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem, Dot,
   end
 end
 
+struct Map end
+
+function build!(builder, ::Map, args...)
+  f = args[end]
+  args = args[1:end-1]
+  settypes!(builder, f, args..., with = eltype)
+  builder.Map(args, build(f), [0])
+end
+
 struct XTuple end
 
 build!(builder, ::XTuple, xs...) = builder.Tuple(xs...)

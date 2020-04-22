@@ -6,6 +6,11 @@ toxla(x::XScalar) = x
 toxla(x::Array{<:XScalar}) = x
 toxla(x) = map(f -> toxla(getfield(x, f)), fieldnames(typeof(x)))
 
+function trace(Ts...)
+  ir = Mjolnir.trace(Primitives(), Ts...)
+  return broadcasts!(ir)
+end
+
 function xla(f)
   cache = IdDict()
   function (args...)
@@ -13,7 +18,7 @@ function xla(f)
     if haskey(cache, key)
       xla_f = cache[key]
     else
-      ir = trace(Primitives(), Const(f), typeof.(args)...)
+      ir = trace(Const(f), typeof.(args)...)
       ir = convert_xla!(ir, ((), args...))
       xla_f = cache[key] = XLA.compile(ir)
     end
