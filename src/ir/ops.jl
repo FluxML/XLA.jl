@@ -33,13 +33,20 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem, Dot,
   end
 end
 
+alldims(builder, xs) = [0:ndims(shapeof(builder, xs))-1;]
+
 struct Map end
 
-function build!(builder, ::Map, args...)
-  f = args[end]
-  args = args[1:end-1]
+function build!(builder, ::Map, f, args...)
   settypes!(builder, f, args..., with = eltype)
-  builder.Map(args, build(f), [0])
+  builder.Map(args, build(f), alldims(builder, args[1]))
+end
+
+struct Reduce end
+
+function build!(builder, ::Reduce, f, xs, init)
+  settypes!(builder, f, xs, xs, with = eltype)
+  builder.Reduce(xs, init, build(f), alldims(builder, xs))
 end
 
 struct XTuple end

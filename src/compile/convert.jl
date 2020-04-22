@@ -68,7 +68,14 @@ function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)
   args = ir[v].expr.args
   f = ir[args[2]].expr
   strip_self_arg!(f)
-  ir[v] = Expr(:call, Map(), args[3:end]..., args[2])
+  ir[v] = Expr(:call, Map(),  args[2], args[3:end]...)
+end
+
+function xlaop!(ir, v, ::AType{typeof(mapreduce)}, ::AType{typeof(identity)}, op, xs)
+  args = ir[v].expr.args
+  f = ir[args[3]].expr
+  strip_self_arg!(f)
+  ir[v] = Expr(:call, Reduce(), args[3], args[4], zero(eltype(widen(xs))))
 end
 
 function xlaop!(ir, v, args...)

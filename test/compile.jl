@@ -53,3 +53,7 @@ xpoly = xla(poly)
 @test xpoly(3) == 10
 
 @test collect(xpoly([1, 2, 3])) == [2, 5, 10]
+
+xsum = xla(xs -> reduce((a, b) -> a+b, xs))
+
+@test xsum([1, 2, 3]) == 6
