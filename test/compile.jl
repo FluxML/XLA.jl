@@ -69,3 +69,14 @@ xsum1 = xla(xs -> sum(xs, dims = 1))
 @test xsum1([1, 2, 3, 4]) == 10
 
 @test collect(xsum1([1 2; 3 4])) == [4, 6]
+
+function softmax(xs, dims = 1)
+    max_ = maximum(xs, dims=dims)
+    exp_ = exp.(xs .- max_)
+    exp_ ./ sum(exp_, dims=dims)
+end
+
+xsoftmax = xla(softmax)
+
+@test collect(xsoftmax([1, 2, 3])) == softmax([1, 2, 3])
+@test_broken collect(xsoftmax([1 2; 3 4])) == softmax([1 2; 3 4])

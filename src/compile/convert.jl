@@ -29,7 +29,7 @@ xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
 xlaop(args, ::AType{Type{T}}, ::AType{<:XScalar}) where T<:XScalar =
   xcall(ConvertElementType(T), args[2])
 
-for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
+for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (/, :Div), (^, :Pow), (>, :Gt), (<, :Lt), (max, :Max)]
   @eval @abstract Operations $op(a::Const{T}, b::Const{T}) where T<:XScalar =
     Const($op(a.value, b.value))
   @eval @abstract Operations $op(a::AType{T}, b::AType{T}) where T<:XScalar =
