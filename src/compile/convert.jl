@@ -79,15 +79,20 @@ function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)
   ir[v] = Expr(:call, Map(),  args[2], args[3:end]...)
 end
 
-function xlaop!(ir, v, ::AType{typeof(mapreduce)}, ::AType{typeof(identity)}, op, xs)
+# TODO XLA drops dimensions, Julia doesn't; make XLA do the Julia thing.
+function xlaop!(ir, v, ::AType{typeof(mapreduce)}, ::AType{typeof(identity)}, op, xs; dims = :)
   args = ir[v].expr.args
+  args[1] isa KwFunc && (popfirst!(args); popfirst!(args))
   f = ir[args[3]].expr
   strip_self_arg!(f)
-  ir[v] = Expr(:call, Reduce(), args[3], args[4], zero(eltype(widen(xs))))
+  ir[v] = Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs))))
 end
 
-function xlaop!(ir, v, args...)
-  ir[v] = xlaop(ir[v].expr.args, args...)
+xlaop!(ir, v, ::AType{<:KwFunc}, kw::Const, f, args...) =
+  xlaop!(ir, v, f, args...; kw.value...)
+
+function xlaop!(ir, v, args...; kw...)
+  ir[v] = xlaop(ir[v].expr.args, args...; kw...)
 end
 
 function xlaops!(ir)

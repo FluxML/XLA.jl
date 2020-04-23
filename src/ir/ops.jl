@@ -42,11 +42,14 @@ function build!(builder, ::Map, f, args...)
   builder.Map(args, build(f), alldims(builder, args[1]))
 end
 
-struct Reduce end
+struct Reduce
+  dims
+end
 
-function build!(builder, ::Reduce, f, xs, init)
+function build!(builder, op::Reduce, f, xs, init)
   settypes!(builder, f, xs, xs, with = eltype)
-  builder.Reduce(xs, init, build(f), alldims(builder, xs))
+  dims = op.dims == (:) ? alldims(builder, xs) : sort([op.dims...].-1)
+  builder.Reduce(xs, init, build(f), dims)
 end
 
 struct XTuple end

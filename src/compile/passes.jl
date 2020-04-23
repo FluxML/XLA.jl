@@ -18,6 +18,15 @@ function broadcasts!(ir)
       func = trace(op, x, x)
       func = insert!(ir, v, func)
       ex.args[3] = func
+    elseif isexpr(ex, :call) && ex.args[1] == KwFunc{typeof(mapreduce)}()
+      # TODO clean this up
+      @assert ex.args[2+2] == identity
+      op = exprtype(ir, ex.args[3+2])
+      x = exprtype(ir, ex.args[4+2])
+      x = eltype(widen(x))
+      func = trace(op, x, x)
+      func = insert!(ir, v, func)
+      ex.args[3+2] = func
     end
   end
   return ir
