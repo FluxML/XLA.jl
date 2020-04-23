@@ -57,3 +57,9 @@ xpoly = xla(poly)
 xsum = xla(xs -> reduce((a, b) -> a+b, xs))
 
 @test xsum([1, 2, 3]) == 6
+
+xexp = xla(x -> exp.(x))
+
+@test xexp(2) == exp(2)
+
+@test collect(xexp([1, 2, 3])) == exp.([1, 2, 3])

@@ -26,6 +26,9 @@ instead(::Operations, args, ::AType{typeof(<)}, a::AType{<:XScalar}, b::AType{<:
 xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
   xcall(ConvertElementType(T), args[3])
 
+xlaop(args, ::AType{Type{T}}, ::AType{<:XScalar}) where T<:XScalar =
+  xcall(ConvertElementType(T), args[2])
+
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
   @eval @abstract Operations $op(a::Const{T}, b::Const{T}) where T<:XScalar =
     Const($op(a.value, b.value))
@@ -33,6 +36,11 @@ for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
           xcall($xop(), args[2:end]...)
+end
+
+for (op, xop) in [(exp, :Exp)]
+  @eval @abstract Operations $op(a::XFloat) = widen(a)
+  @eval xlaop(args, ::AType{typeof($op)}, _) = xcall($xop(), args[2])
 end
 
 for (op, xop) in [(+, :Add), (-, :Sub)]

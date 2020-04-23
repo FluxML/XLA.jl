@@ -1,6 +1,8 @@
 import PyCall: PyObject
 
-const XScalar = Union{Float64,Float32,Float16,Int64,Int32,Int16}
+const XFloat  = Union{Float64,Float32,Float16}
+const XInt    = Union{Int64,Int32,Int16}
+const XScalar = Union{XFloat,XInt}
 
 const julia2numpy = Dict(
   Float64 => "float64",
