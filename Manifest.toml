@@ -55,7 +55,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[Mjolnir]]
 deps = ["IRTools", "MacroTools"]
-git-tree-sha1 = "4a51c02b967f3c9a476feba5132ed45e7a333036"
+git-tree-sha1 = "ac864bd877d14315176f434f2f68f08a49794780"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/Mjolnir.jl"
 uuid = "1154507a-7ac2-44fe-9f15-34617bca9db5"

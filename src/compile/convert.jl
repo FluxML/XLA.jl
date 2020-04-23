@@ -14,29 +14,29 @@ simplelt(a, b) = <(promote(a, b)...)
 instead(::Operations, args, ::AType{typeof(<)}, a::AType{<:XScalar}, b::AType{<:XScalar}) =
   widen(a) == widen(b) ? nothing : ([simplelt, args[2], args[3]], (Const(simplelt), a, b))
 
-abstract(::Operations, ::AType{typeof(convert)}, ::AType{Type{T}}, x::Const{<:XScalar}) where T<:XScalar =
+@abstract Operations convert(::Type{T}, x::Const{<:XScalar}) where T<:XScalar =
   Const(convert(T, x.value))
 
-abstract(::Operations, ::AType{typeof(convert)}, ::AType{Type{T}}, S::AType{<:XScalar}) where T<:XScalar =
+@abstract Operations convert(::Type{T}, S::XScalar) where T<:XScalar =
   widen(S) <: T ? S : T
 
-abstract(::Operations, ::AType{Type{T}}, S::AType{<:XScalar}) where T<:XScalar =
+@abstract Operations (::Type{T})(S::XScalar) where T<:XScalar =
   abstract(Operations(), Const(convert), Const(T), S)
 
 xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
   xcall(ConvertElementType(T), args[3])
 
 for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (^, :Pow), (>, :Gt), (<, :Lt)]
-  @eval abstract(::Operations, ::AType{typeof($op)}, a::Const{T}, b::Const{T}) where T<:XScalar =
+  @eval @abstract Operations $op(a::Const{T}, b::Const{T}) where T<:XScalar =
     Const($op(a.value, b.value))
-  @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
+  @eval @abstract Operations $op(a::AType{T}, b::AType{T}) where T<:XScalar =
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:XScalar =
           xcall($xop(), args[2:end]...)
 end
 
 for (op, xop) in [(+, :Add), (-, :Sub)]
-  @eval abstract(::Operations, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:Array{<:XScalar} =
+  @eval @abstract Operations $op(a::T, b::T) where T<:Array{<:XScalar} =
     Core.Compiler.return_type($op, Tuple{T,T})
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:Array{<:XScalar} =
           xcall($xop(), args[2:end]...)
@@ -45,7 +45,7 @@ end
 xlaop(args, ::AType{typeof(broadcast)}, _...) =
   Expr(:call, Map(), args[3:end]..., args[2])
 
-abstract(::Operations, ::AType{typeof(*)}, a::AType{Matrix{T}}, b::AType{Vector{T}}) where T<:XScalar = Vector{T}
+@abstract Operations (a::Matrix{T} * b::Vector{T}) where T<:XScalar = Vector{T}
 
 xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
   xcall(Dot(), args[2:end]...)
