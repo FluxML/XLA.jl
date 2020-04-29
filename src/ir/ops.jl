@@ -11,7 +11,7 @@ function run(op, args...)
   b = xlaclient.ComputationBuilder("")
   arg_ops = [b.ParameterWithShape(arg.shape()) for arg in args]
   build!(b, op, arg_ops...)
-  b.Build().Compile().Execute(args) |> wrapvalue
+  b.Build().Compile().Execute(args, false)[1] |> wrapvalue
 end
 
 for op in :[Neg, Sign, Floor, Ceil, Round, Exp, Log, Expm1, Log1p, Tanh,

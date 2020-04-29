@@ -96,7 +96,6 @@ default_device() = xlaclient.get_local_backend().devices()[1]
 
 buffer(x::Array{<:XScalar}) = xlaclient.Buffer.from_pyval(x)
 buffer(x::XScalar) = xlaclient.Buffer.from_pyval(x)
-buffer(xs::Tuple) = xlaclient.Buffer.make_tuple(buffer.(xs), default_device())
 
 # IR Builder
 
@@ -140,5 +139,5 @@ end
 function compile(ir::IR)
   ir = controlflow(ir)
   comp = build(ir).Compile()
-  return (xs...) -> wrapvalue(comp.Execute(buffer.(xs)))
+  return (xs...) -> wrapvalue.(comp.Execute(buffer.(xs), false))[1]
 end

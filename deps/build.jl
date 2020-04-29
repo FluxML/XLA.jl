@@ -1,6 +1,6 @@
 using PyCall, Conda
 
-JAXLIB="0.1.41"
+JAXLIB="0.1.42"
 
 if PyCall.conda
   Conda.add("pip")
