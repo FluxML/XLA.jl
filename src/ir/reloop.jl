@@ -19,7 +19,7 @@ function branches(ir, b)
 end
 
 function extract(b)
-  ir = renumber(IR(b))
+  ir = IR(b)
   empty!(ir.blocks[1].branches)
   return ir
 end

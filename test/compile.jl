@@ -1,16 +1,15 @@
 using XLA, Test
 
-add = (a, b) -> a+b
-@test @code_xla(add(2, 3)) isa XLA.IR
+@test @code_xla(2+3) isa XLA.IR
 
 double = xla(x -> x + x)
 
 @test double(21) == 42
 @test double(4.5) == 9.0
 
-add = xla(add)
+xadd = xla(+)
 
-@test add(2, 2.0) == 4.0
+@test xadd(2, 2.0) == 4.0
 
 @test xla(() -> 2+2)() == 4
 
@@ -24,8 +23,8 @@ xrelu = xla(relu)
 @test xrelu(5.0) == 5.0
 
 let x = rand(3), y = rand(3)
-  @test add(x, y) isa XLA.XArray
-  @test collect(add(x, y)) == x+y
+  @test xadd(x, y) isa XLA.XArray
+  @test collect(xadd(x, y)) == x+y
 end
 
 function updatezero!(env)

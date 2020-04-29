@@ -4,9 +4,15 @@ Primitives() = Multi(Operations(), Basic())
 
 exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 
-layout(x::XScalar) = typeof(x)
-layout(x) = map(f -> layout(getfield(x, f)), fieldnames(typeof(x)))
-layout(x::Array) = Shape(eltype(x), size(x))
+layout(x::XScalar) = [typeof(x)]
+layout(x::Array) = [Shape(eltype(x), size(x))]
+layout(x) = vcat(map(f -> layout(getfield(x, f)), fieldnames(typeof(x)))...)
+
+function subrange(T, i)
+  offset = length(layout(T[1:i-1]))
+  len = length(layout(T[i]))
+  return offset .+ (1:len)
+end
 
 # Base's `<` does something complicated.
 simplelt(a, b) = <(promote(a, b)...)
@@ -63,6 +69,9 @@ fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 xlaop(args, ::AType{typeof(tuple)}, xs...) =
   Expr(:call, XTuple(), args[2:end]...)
 
+xlaop(args, ::AType{typeof(getindex)}, ::AType{<:Tuple}, i::Const{<:Integer}) =
+  Expr(:call, GetTupleElement(i.value-1), args[2])
+
 xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
   Expr(:call, GetTupleElement(fieldnum(T, f.value)-1), args[2])
 
@@ -107,10 +116,23 @@ function xlaops!(ir)
   return ir
 end
 
+function flattenargs!(ir, T)
+  T = (T...,)
+  arglayout = (layout(T)...,)
+  args = copy(arguments(ir))
+  deletearg!(ir, 1:length(args))
+  components = [argument!(ir, arglayout[i]) for i = 1:length(arglayout)]
+  env = Dict()
+  for i = 1:length(args)
+    cs = components[subrange(T,i)]
+    env[args[i]] = length(cs) == 1 ? cs[1] : pushfirst!(ir, xcall(XTuple(), cs...))
+  end
+  prewalk!(x -> get(env, x, x), ir)
+  return ir
+end
+
 function convert_xla!(ir, T)
   xlaops!(ir)
-  for i = 1:length(arguments(ir))
-    argtypes(ir)[i] = layout(T[i])
-  end
+  flattenargs!(ir, T)
   return ir
 end
