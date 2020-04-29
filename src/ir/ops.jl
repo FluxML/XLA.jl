@@ -6,20 +6,11 @@ struct Lambda
   func::IR
 end
 
-function run(op, args...)
-  args = buffer.(args)
-  b = xlaclient.ComputationBuilder("")
-  arg_ops = [b.ParameterWithShape(arg.shape()) for arg in args]
-  build!(b, op, arg_ops...)
-  b.Build().Compile().Execute(args, false)[1] |> wrapvalue
-end
-
 for op in :[Neg, Sign, Floor, Ceil, Round, Exp, Log, Expm1, Log1p, Tanh,
             Sin, Cos, Lgamma, Digamma, Erf, Erfc, ErfInv, Sqrt, Rsqrt, Not].args
   @eval begin
     struct $op end
     build!(builder, ::$op, x) = getproperty(builder, $(Expr(:quote, op)))(x)
-    (::$op)(x) = run($op(), x)
   end
 end
 
@@ -29,7 +20,6 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem, Dot,
   @eval begin
     struct $op end
     build!(builder, ::$op, x, y) = getproperty(builder, $(Expr(:quote, op)))(x, y)
-    (::$op)(x, y) = run($op(), x, y)
   end
 end
 
@@ -56,15 +46,11 @@ struct XTuple end
 
 build!(builder, ::XTuple, xs...) = builder.Tuple(xs...)
 
-(op::XTuple)(xs...) = run(op, xs...)
-
 struct GetTupleElement
   idx::Int
 end
 
 build!(builder, op::GetTupleElement, x) = builder.GetTupleElement(x, op.idx)
-
-(op::GetTupleElement)(xs...) = run(op, xs...)
 
 struct ConvertElementType
   to::Type{<:XScalar}
@@ -72,8 +58,6 @@ end
 
 build!(builder, op::ConvertElementType, x) =
   builder.ConvertElementType(x, primitivetype(op.to))
-
-(op::ConvertElementType)(xs...) = run(op, xs...)
 
 struct Conditional end
 
