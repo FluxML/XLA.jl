@@ -24,7 +24,8 @@ macro code_xla(ex)
   @capture(ex, f_(args__)) || error("@trace f(args...)")
   quote
     tr = trace(Const($(esc(f))), typeof.(($(esc.(args)...),))...)
-    convert_xla!(tr, ((), $(esc.(args)...)))
+    deletearg!(tr, 1)
+    convert_xla!(tr, ($(esc.(args)...),))
   end
 end
 

@@ -19,7 +19,8 @@ function xla(f)
       xla_f = cache[key]
     else
       ir = trace(Const(f), typeof.(args)...)
-      ir = convert_xla!(ir, ((), args...))
+      deletearg!(ir, 1) # `f` is constant
+      ir = convert_xla!(ir, (args...,))
       xla_f = cache[key] = XLA.compile(ir)
     end
     return xla_f(toxla(args)...)
