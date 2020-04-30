@@ -139,5 +139,5 @@ end
 function compile(ir::IR)
   ir = controlflow(ir)
   comp = build(ir).Compile()
-  return (xs...) -> wrapvalue.(comp.Execute(buffer.(xs)))[1]
+  return (xs...) -> wrapvalue.(comp.Execute(buffer.(xs)))
 end
