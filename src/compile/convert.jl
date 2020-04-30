@@ -4,13 +4,21 @@ Primitives() = Multi(Operations(), Basic())
 
 exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 
-layout(x::XScalar) = [typeof(x)]
-layout(x::Array) = [Shape(eltype(x), size(x))]
-layout(x) = vcat(map(f -> layout(getfield(x, f)), fieldnames(typeof(x)))...)
+xtypeof(x::XScalar) = typeof(x)
+xtypeof(x::Tuple) = Partial{typeof(x)}(xtypeof.(x))
+xtypeof(x::Array{<:XScalar}) = Shape(eltype(x), size(x))
+xtypeof(x) = Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
+
+layout(x::Type{<:XScalar}) = [x]
+layout(x::Shape) = [x]
+layout(x::Type{<:Array{<:XScalar}}) = [x]
+layout(x::Partial) = vcat(map(f -> layout(getfield(x.value, f)), fieldnames(widen(x)))...)
+
+subtype(T::Partial{<:Tuple}, i) = T.value[i]
 
 function subrange(T, i)
-  offset = length(layout(T[1:i-1]))
-  len = length(layout(T[i]))
+  offset = sum(Int[length(layout(subtype(T, j))) for j = 1:i-1])
+  len = length(layout(subtype(T, i)))
   return offset .+ (1:len)
 end
 
@@ -117,7 +125,6 @@ function xlaops!(ir)
 end
 
 function flattenargs!(ir, T)
-  T = (T...,)
   arglayout = (layout(T)...,)
   args = copy(arguments(ir))
   deletearg!(ir, 1:length(args))

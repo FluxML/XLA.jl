@@ -3,7 +3,7 @@ module XLA
 using IRTools, IRTools.All, PyCall, Mjolnir
 using IRTools.Inner: entry
 using MacroTools: @capture
-import Mjolnir: AType, Multi, Basic, Const, KwFunc, abstract, instead, widen, @abstract
+import Mjolnir: AType, Partial, Multi, Basic, Const, KwFunc, abstract, instead, widen, @abstract
 
 export @code_xla, xla
 
@@ -25,7 +25,7 @@ macro code_xla(ex)
   quote
     tr = trace(Const($(esc(f))), typeof.(($(esc.(args)...),))...)
     deletearg!(tr, 1)
-    convert_xla!(tr, ($(esc.(args)...),))
+    convert_xla!(tr, xtypeof(($(args...),)))
   end
 end
 
