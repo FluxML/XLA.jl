@@ -26,7 +26,7 @@ macro code_xla(ex)
   quote
     tr = trace(Const($(esc(f))), typeof.(($(esc.(args)...),))...)
     deletearg!(tr, 1)
-    convert_xla!(tr, xtypeof(($(args...),)))
+    convert_xla!(tr, xtypeof(($(esc.(args)...),))) |> renumber
   end
 end
 
