@@ -181,6 +181,9 @@ function flattenargs!(ir, T)
     env[args[i]] = length(cs) == 1 ? cs[1] : pushfirst!(ir, xcall(XTuple(), cs...))
   end
   prewalk!(x -> get(env, x, x), ir)
+  for (v, st) in ir
+    ir[v] = stmt(st, type = Any)
+  end
   return ir
 end
 
