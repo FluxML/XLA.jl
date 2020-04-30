@@ -20,9 +20,10 @@ rebuild(T::Mjolnir.Node, xs) = rebuild(widen(T), xs)
 rebuild(T::Const, xs) = T.value
 
 printstuff(x) = x
-printstuff(x::Print) = (println(x.data...); nothing)
+printstuff(x::Print) = nothing
 function printstuff(x::Tuple{Print,Any})
   printstuff(x[1])
+  println(x[1].data...)
   return printstuff(x[2])
 end
 
