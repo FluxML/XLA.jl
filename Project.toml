@@ -8,6 +8,7 @@ Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 IRTools = "7869d1d1-7146-5819-86e3-90919afe41df"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 Mjolnir = "1154507a-7ac2-44fe-9f15-34617bca9db5"
+NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 
 [compat]
