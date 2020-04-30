@@ -76,9 +76,6 @@ xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) wher
 
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 
-xlaop(args, ::AType{typeof(tuple)}, xs...) =
-  Expr(:call, XTuple(), args[2:end]...)
-
 function strip_self_arg!(ir)
   @assert exprtype(ir, arguments(ir)[1]) isa Const
   deletearg!(ir, 1)
@@ -88,6 +85,16 @@ end
 function tuplerange!(ir, v, xs, is)
   part(i) = length(layout(exprtype(ir, xs))) == 1 ? xs : insert!(ir, v, xcall(GetTupleElement(i-1), xs))
   ir[v] = length(is) == 1 ? xcall(GetTupleElement(is[]-1), xs) : xcall(XTuple(), part.(is)...)
+end
+
+function tuplecat!(ir, v, xs)
+  layouts = layout.(exprtype.((ir,), xs))
+  if sum(length.(layouts)) == 1
+    ir[v] = xs[findfirst(x -> !isempty(x), layouts)]
+  else
+    parts(i) = length(layouts[i]) == 1 ? [xs[i]] : [insert!(ir, v, xcall(GetTupleElement(j-1), xs[i])) for j = 1:length(layouts[i])]
+    ir[v] = xcall(XTuple(), vcat([parts(i) for i = 1:length(xs)]...)...)
+  end
 end
 
 function xlaop!(ir, v, ::AType{typeof(getindex)}, T::AType{<:Tuple}, i::Const{<:Integer})
@@ -100,6 +107,17 @@ function xlaop!(ir, v, ::AType{typeof(getfield)}, T::AType, i::Const{Symbol})
   xs = ir[v].expr.args[2]
   is = subrange(T, fieldnum(widen(T), i.value))
   tuplerange!(ir, v, xs, is)
+end
+
+function xlaop!(ir, v, ::AType{typeof(Mjolnir.__new__)}, ::AType{Type{T}}, xs...) where T
+  @assert layout(T) == layout(Partial{Tuple{widen.(xs)...}}(xs))
+  args = ir[v].expr.args[3:end]
+  tuplecat!(ir, v, args)
+end
+
+function xlaop!(ir, v, ::AType{typeof(tuple)}, xs...)
+  args = ir[v].expr.args[2:end]
+  tuplecat!(ir, v, args)
 end
 
 function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)
