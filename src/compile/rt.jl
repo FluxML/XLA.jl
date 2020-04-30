@@ -32,22 +32,31 @@ function trace(Ts...)
   return ir |> broadcasts! |> prints!
 end
 
-function xla(f)
-  cache = Dict()
-  function (args...)
-    T = xtypeof(args)
-    if haskey(cache, T)
-      (xla_f, out) = cache[T]
-    else
-      ir = trace(Const(f), typeof.(args)...)
-      out = IRTools.returntype(blocks(ir)[end])
-      deletearg!(ir, 1) # `f` is constant
-      ir = convert_xla!(ir, T)
-      xla_f, = cache[T] = XLA.compile(ir), out
-    end
-    return rebuild(out, xla_f(toxla(args)...)) |> printstuff
-  end
+struct XFunction
+  func
+  cache::Dict
 end
+
+xla(f) = XFunction(f, Dict())
+
+function (f::XFunction)(args...)
+  T = xtypeof(args)
+  if haskey(f.cache, T)
+    (xla_f, out) = f.cache[T]
+  else
+    ir = trace(Const(f.func), typeof.(args)...)
+    out = IRTools.returntype(blocks(ir)[end])
+    deletearg!(ir, 1) # `f` is constant
+    ir = convert_xla!(ir, T)
+    xla_f, = f.cache[T] = XLA.compile(ir), out
+  end
+  return rebuild(out, xla_f(toxla(args)...)) |> printstuff
+end
+
+invokeoriginal(f::XFunction, args...) = f.func(args...)
+
+instead(::Operations, args, F::AType{<:XFunction}, xs...) =
+  ([invokeoriginal, args...], (Const(invokeoriginal), F, xs...))
 
 isxla() = false
 @abstract Operations isxla() = Const(true)

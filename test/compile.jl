@@ -11,6 +11,10 @@ xadd = xla(+)
 
 @test xadd(2, 2.0) == 4.0
 
+xadd2 = xla(xadd)
+
+@test xadd2(2, 3) == 5
+
 @test xla(() -> 2+2)() == 4
 
 @test xla(x -> 3x^(1+1) + (2x + 1))(5) == 86
