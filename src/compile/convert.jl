@@ -13,8 +13,10 @@ layout(x::Type{<:XScalar}) = [x]
 layout(x::Shape) = [x]
 layout(x::Type{<:Array{<:XScalar}}) = [x]
 layout(x::Partial) = vcat(map(f -> layout(getfield(x.value, f)), fieldnames(widen(x)))...)
+layout(x::Type) = vcat(map(f -> layout(fieldtype(x, f)), fieldnames(x))...)
 
 subtype(T::Partial{<:Tuple}, i) = T.value[i]
+subtype(T::Type, i) = fieldtype(T, i)
 
 function subrange(T, i)
   offset = sum(Int[length(layout(subtype(T, j))) for j = 1:i-1])
@@ -77,16 +79,27 @@ fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 xlaop(args, ::AType{typeof(tuple)}, xs...) =
   Expr(:call, XTuple(), args[2:end]...)
 
-xlaop(args, ::AType{typeof(getindex)}, ::AType{<:Tuple}, i::Const{<:Integer}) =
-  Expr(:call, GetTupleElement(i.value-1), args[2])
-
-xlaop(args, ::AType{typeof(getfield)}, ::AType{T}, f::Const{Symbol}) where T =
-  Expr(:call, GetTupleElement(fieldnum(T, f.value)-1), args[2])
-
 function strip_self_arg!(ir)
   @assert exprtype(ir, arguments(ir)[1]) isa Const
   deletearg!(ir, 1)
   return ir
+end
+
+function tuplerange!(ir, v, xs, is)
+  part(i) = length(layout(exprtype(ir, xs))) == 1 ? xs : insert!(ir, v, xcall(GetTupleElement(i-1), xs))
+  ir[v] = length(is) == 1 ? xcall(GetTupleElement(is[]-1), xs) : xcall(XTuple(), part.(is)...)
+end
+
+function xlaop!(ir, v, ::AType{typeof(getindex)}, T::AType{<:Tuple}, i::Const{<:Integer})
+  xs = ir[v].expr.args[2]
+  is = subrange(T, i.value)
+  tuplerange!(ir, v, xs, is)
+end
+
+function xlaop!(ir, v, ::AType{typeof(getfield)}, T::AType, i::Const{Symbol})
+  xs = ir[v].expr.args[2]
+  is = subrange(T, fieldnum(widen(T), i.value))
+  tuplerange!(ir, v, xs, is)
 end
 
 function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)
