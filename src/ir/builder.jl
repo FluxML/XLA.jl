@@ -124,6 +124,8 @@ function build(ir::IR)
       env[v] = ex
     elseif isexpr(ex)
       error("Invalid XLA expression $(ex)")
+    elseif ex isa Variable
+      env[v] = env[ex]
     else
       env[v] = const!(builder, ex)
     end

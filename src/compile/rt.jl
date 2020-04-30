@@ -7,17 +7,28 @@ rebuild(::Type{<:Union{XScalar,Array}}, xs) = popfirst!(xs)
 # TODO: this is a hack.
 # Where types match we can construct the type directly.
 # Where they don't (i.e. XArray) we should go via Functors.jl.
+constructor(T::Type) = T.name.wrapper
+constructor(T::Type{<:Tuple}) = tuple
+
 function rebuild(T::Partial, xs)
   xs = rebuild.(T.value, (xs,))
-  T = widen(T).name.wrapper
+  T = constructor(widen(T))
   return T(xs...)
 end
 
 rebuild(T::Mjolnir.Node, xs) = rebuild(widen(T), xs)
+rebuild(T::Const, xs) = T.value
+
+printstuff(x) = x
+printstuff(x::Print) = (println(x.data...); nothing)
+function printstuff(x::Tuple{Print,Any})
+  printstuff(x[1])
+  return printstuff(x[2])
+end
 
 function trace(Ts...)
   ir = Mjolnir.trace(Primitives(), Ts...)
-  return broadcasts!(ir)
+  return ir |> broadcasts! |> prints!
 end
 
 function xla(f)
@@ -33,6 +44,6 @@ function xla(f)
       ir = convert_xla!(ir, T)
       xla_f, = cache[T] = XLA.compile(ir), out
     end
-    return rebuild(out, xla_f(toxla(args)...))
+    return rebuild(out, xla_f(toxla(args)...)) |> printstuff
   end
 end

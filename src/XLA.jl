@@ -1,6 +1,7 @@
 module XLA
 
-using IRTools, IRTools.All, PyCall, Mjolnir
+using IRTools, IRTools.All, PyCall, Mjolnir, MacroTools
+using IRTools: block
 using IRTools.Inner: entry
 using MacroTools: @capture
 import Mjolnir: AType, Partial, Multi, Basic, Const, KwFunc, abstract, instead, widen, @abstract

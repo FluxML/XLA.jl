@@ -77,3 +77,22 @@ xsoftmax = xla(softmax)
 xsquare = xla(x -> x^2)
 
 @test xsquare(1+2im) == -3+4im
+
+xsquare = xla(x -> @show x^2)
+
+function stdout_string(f)
+  _stdout = stdout
+  try
+    rd, = redirect_stdout()
+    f()
+    return String(readavailable(rd))
+  finally
+    redirect_stdout(_stdout)
+  end
+end
+
+output = stdout_string() do
+  @test xsquare(1+2im) == -3+4im
+end
+
+@test output == "x ^ 2 = -3 + 4im\n"

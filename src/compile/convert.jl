@@ -10,10 +10,12 @@ xtypeof(x::Array{<:XScalar}) = Shape(eltype(x), size(x))
 xtypeof(x) = Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
 
 layout(x::Type{<:XScalar}) = [x]
+layout(::Const) = []
 layout(x::Shape) = [x]
 layout(x::Type{<:Array{<:XScalar}}) = [x]
-layout(x::Partial) = vcat(map(f -> layout(getfield(x.value, f)), fieldnames(widen(x)))...)
+layout(x::Partial) = vcat(map(i -> layout(x.value[i]), 1:fieldcount(widen(x)))...)
 layout(x::Type) = vcat(map(f -> layout(fieldtype(x, f)), fieldnames(x))...)
+layout(x::Mjolnir.Node) = layout(widen(x))
 
 subtype(T::Partial{<:Tuple}, i) = T.value[i]
 subtype(T::Type, i) = fieldtype(T, i)
@@ -23,6 +25,13 @@ function subrange(T, i)
   len = length(layout(subtype(T, i)))
   return offset .+ (1:len)
 end
+
+struct Print
+  data
+end
+
+@abstract Operations repr(x) = x
+@abstract Operations println(xs...) = Partial{Print}(Any[Mjolnir.ptuple(xs...)])
 
 # Base's `<` does something complicated.
 simplelt(a, b) = <(promote(a, b)...)
@@ -74,6 +83,8 @@ xlaop(args, ::AType{typeof(broadcast)}, _...) =
 xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
   xcall(Dot(), args[2:end]...)
 
+xlaop(args, ::AType{typeof(repr)}, x) = args[2]
+
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))
 
 function strip_self_arg!(ir)
@@ -118,6 +129,10 @@ end
 function xlaop!(ir, v, ::AType{typeof(tuple)}, xs...)
   args = ir[v].expr.args[2:end]
   tuplecat!(ir, v, args)
+end
+
+function xlaop!(ir, v, ::AType{typeof(println)}, xs...)
+  tuplecat!(ir, v, ir[v].expr.args[2:end])
 end
 
 function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)

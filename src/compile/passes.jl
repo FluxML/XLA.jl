@@ -31,3 +31,18 @@ function broadcasts!(ir)
   end
   return ir
 end
+
+function prints!(ir)
+  ps = []
+  for (v, st) in ir
+    if iscall(st.expr, println)
+      push!(ps, v)
+    end
+  end
+  ret = returnvalue(blocks(ir)[end])
+  for p in ps
+    ret = push!(ir, stmt(xcall(tuple, p, ret), type = Mjolnir.ptuple(exprtype(ir, p), exprtype(ir, ret))))
+  end
+  return!(ir, ret)
+  return ir
+end
