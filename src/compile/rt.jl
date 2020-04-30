@@ -2,7 +2,7 @@ toxla(x::XScalar) = Any[x]
 toxla(x::Array{<:XScalar}) = Any[x]
 toxla(x) = vcat(map(f -> toxla(getfield(x, f)), fieldnames(typeof(x)))...)
 
-rebuild(::Type{<:Union{XScalar,Array}}, xs) = popfirst!(xs)
+rebuild(::Type{<:Union{XScalar,Array,Bool}}, xs) = popfirst!(xs)
 
 # TODO: this is a hack.
 # Where types match we can construct the type directly.
@@ -48,3 +48,6 @@ function xla(f)
     return rebuild(out, xla_f(toxla(args)...)) |> printstuff
   end
 end
+
+isxla() = false
+@abstract Operations isxla() = Const(true)

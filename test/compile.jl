@@ -96,3 +96,6 @@ output = stdout_string() do
 end
 
 @test output == "x ^ 2 = -3 + 4im\n"
+
+@test isxla() == false
+@test xla(isxla)() == true

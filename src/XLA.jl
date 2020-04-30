@@ -6,7 +6,7 @@ using IRTools.Inner: entry
 using MacroTools: @capture
 import Mjolnir: AType, Partial, Multi, Basic, Const, KwFunc, abstract, instead, widen, @abstract
 
-export @code_xla, xla
+export @code_xla, xla, isxla
 
 function __init__()
   global xlaclient = pyimport("jaxlib.xla_client")

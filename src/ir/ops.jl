@@ -1,4 +1,4 @@
-const!(builder, x::Union{AbstractArray,XScalar}) = builder.Constant(x)
+const!(builder, x::Union{AbstractArray,XScalar,Bool}) = builder.Constant(x)
 const!(builder, x::Tuple{}) = builder.Tuple()
 
 struct Lambda
