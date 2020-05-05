@@ -5,7 +5,7 @@ Primitives() = Multi(Operations(), Basic())
 exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 
 xtypeof(x::XScalar) = typeof(x)
-xtypeof(x::Tuple) = Partial{typeof(x)}(xtypeof.(x))
+xtypeof(x::Tuple) = Partial{typeof(x)}(Any[xtypeof.(x)...])
 xtypeof(x::Array{<:XScalar}) = Shape(eltype(x), size(x))
 xtypeof(x) = Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
 

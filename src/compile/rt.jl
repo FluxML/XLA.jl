@@ -16,6 +16,11 @@ function rebuild(T::Partial, xs)
   return T(xs...)
 end
 
+function rebuild(T::Type{<:Tuple}, xs) # TODO generalise
+  xs = rebuild.(T.parameters, (xs,))
+  tuple(xs...)
+end
+
 rebuild(T::Mjolnir.Node, xs) = rebuild(widen(T), xs)
 rebuild(T::Const, xs) = T.value
 
