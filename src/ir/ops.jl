@@ -1,5 +1,5 @@
 const!(builder, x::Union{AbstractArray,XScalar,Bool}) = builder.Constant(x)
-const!(builder, x::Tuple{}) = builder.Tuple()
+const!(builder, xs::Tuple) = build!(builder, XTuple(), const!.((builder,), xs)...)
 
 struct Lambda
   vars::Vector{Any}
