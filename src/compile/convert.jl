@@ -95,7 +95,7 @@ end
 
 function tuplerange!(ir, v, xs, is)
   part(i) = length(layout(exprtype(ir, xs))) == 1 ? xs : insert!(ir, v, xcall(GetTupleElement(i-1), xs))
-  ir[v] = length(is) == 1 ? xcall(GetTupleElement(is[]-1), xs) : xcall(XTuple(), part.(is)...)
+  ir[v] = length(is) == 1 ? part(is[]) : xcall(XTuple(), part.(is)...)
 end
 
 function tuplecat!(ir, v, xs)
