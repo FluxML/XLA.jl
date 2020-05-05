@@ -5,19 +5,20 @@ Primitives() = Multi(Operations(), Basic())
 exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 
 xtypeof(x::XScalar) = typeof(x)
-xtypeof(x::Tuple) = Partial{typeof(x)}(Any[xtypeof.(x)...])
-xtypeof(x::Array{<:XScalar}) = Shape(eltype(x), size(x))
+xtypeof(x::Tuple) = ptuple(xtypeof.(x)...)
+xtypeof(x::Array{<:XScalar}) = Mjolnir.Shape{typeof(x)}(size(x))
 xtypeof(x) = Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
 
 layout(x::Type{<:XScalar}) = [x]
 layout(::Const) = []
 layout(x::Shape) = [x]
+layout(x::Mjolnir.Shape) = [Shape(eltype(x), size(x))]
 layout(x::Type{<:Array{<:XScalar}}) = [x]
 layout(x::Partial) = vcat(map(i -> layout(x.value[i]), 1:fieldcount(widen(x)))...)
 layout(x::Type) = vcat(map(f -> layout(fieldtype(x, f)), fieldnames(x))...)
 layout(x::Mjolnir.Node) = layout(widen(x))
 
-subtype(T::Partial{<:Tuple}, i) = T.value[i]
+subtype(T::Partial, i) = T.value[i]
 subtype(T::Type, i) = fieldtype(T, i)
 
 function subrange(T, i)

@@ -22,6 +22,7 @@ function rebuild(T::Type{<:Tuple}, xs) # TODO generalise
 end
 
 rebuild(T::Mjolnir.Node, xs) = rebuild(widen(T), xs)
+rebuild(T::Mjolnir.Shape, xs) = rebuild(widen(T), xs)
 rebuild(T::Const, xs) = T.value
 
 printstuff(x) = x
@@ -45,14 +46,14 @@ end
 xla(f) = XFunction(f, Dict())
 
 function (f::XFunction)(args...)
-  T = xtypeof(args)
+  T = xtypeof.(args)
   if haskey(f.cache, T)
     (xla_f, out) = f.cache[T]
   else
-    ir = trace(Const(f.func), typeof.(args)...)
+    ir = trace(Const(f.func), T...)
     out = IRTools.returntype(blocks(ir)[end])
     deletearg!(ir, 1) # `f` is constant
-    ir = convert_xla!(ir, T)
+    ir = convert_xla!(ir, ptuple(T...))
     xla_f, = f.cache[T] = XLA.compile(ir), out
   end
   return rebuild(out, xla_f(toxla(args)...)) |> printstuff

@@ -4,7 +4,8 @@ using IRTools, IRTools.All, PyCall, Mjolnir, MacroTools
 using IRTools: block
 using IRTools.Inner: entry
 using MacroTools: @capture
-import Mjolnir: AType, Partial, Multi, Basic, Const, KwFunc, abstract, instead, widen, @abstract
+import Mjolnir: AType, Partial, Multi, Basic, Const, KwFunc, abstract, instead,
+  ptuple, widen, @abstract
 
 export @code_xla, xla, isxla
 
@@ -24,7 +25,7 @@ include("compile/rt.jl")
 macro code_xla(ex)
   @capture(ex, f_(args__)) || error("@trace f(args...)")
   quote
-    tr = trace(Const($(esc(f))), typeof.(($(esc.(args)...),))...)
+    tr = trace(Const($(esc(f))), xtypeof.(($(esc.(args)...),))...)
     deletearg!(tr, 1)
     convert_xla!(tr, xtypeof(($(esc.(args)...),))) |> renumber
   end
