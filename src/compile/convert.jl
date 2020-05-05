@@ -49,6 +49,8 @@ instead(::Operations, args, ::AType{typeof(<)}, a::AType{<:XScalar}, b::AType{<:
 @abstract Operations (::Type{T})(S::XScalar) where T<:XScalar =
   abstract(Operations(), Const(convert), Const(T), S)
 
+@abstract Operations fill(x::Const, sz::Const) = Const(fill(x.value, sz.value))
+
 xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
   xcall(ConvertElementType(T), args[3])
 
@@ -161,11 +163,10 @@ end
 
 function xlaops!(ir)
   for (v, st) in ir
-    if st.expr isa Union{Array,Number}
+    if st.expr isa Expr
+      xlaop!(ir, v, exprtype.((ir,), st.expr.args)...)
     elseif st.expr isa IR
       ir[v] = xlaops!(st.expr)
-    else
-      xlaop!(ir, v, exprtype.((ir,), st.expr.args)...)
     end
   end
   return ir

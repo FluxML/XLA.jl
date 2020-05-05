@@ -6,4 +6,8 @@ using XLA, Test
   include("compile.jl")
 end
 
+@testset "Flux" begin
+  include("flux.jl")
+end
+
 end

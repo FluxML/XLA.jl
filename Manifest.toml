@@ -23,6 +23,12 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
+[[FillArrays]]
+deps = ["LinearAlgebra", "Random", "SparseArrays"]
+git-tree-sha1 = "5322d34d7600d3429665b37bcf7628dc602a28cc"
+uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
+version = "0.8.8"
+
 [[IRTools]]
 deps = ["InteractiveUtils", "MacroTools", "Test"]
 git-tree-sha1 = "85629eb863a8eb9405607f42dbabe0fa1369f7d3"

@@ -22,6 +22,8 @@ include("compile/passes.jl")
 include("compile/convert.jl")
 include("compile/rt.jl")
 
+include("lib.jl")
+
 macro code_xla(ex)
   @capture(ex, f_(args__)) || error("@trace f(args...)")
   quote
