@@ -75,7 +75,7 @@ xsum1 = xla(xs -> sum(xs, dims = 1))
 
 xsoftmax = xla(softmax)
 
-@test collect(xsoftmax([1, 2, 3])) == softmax([1, 2, 3])
+@test collect(xsoftmax([1, 2, 3])) ≈ softmax([1, 2, 3])
 @test_broken collect(xsoftmax([1 2; 3 4])) == softmax([1 2; 3 4])
 
 xsquare = xla(x -> x^2)

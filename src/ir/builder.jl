@@ -110,13 +110,13 @@ function settypes!(builder, comp::IR, ops...; with = identity)
 end
 
 function build(ir::IR)
-  builder = xlaclient.ComputationBuilder("")
+  builder = xlaclient.XlaBuilder("")
   env = Dict()
   resolve(x::Variable) = env[x]
   resolve(x::QuoteNode) = const!(builder, x.value)
   resolve(x) = const!(builder, x)
-  for (v, T) in zip(arguments(ir), argtypes(ir))
-    env[v] = builder.ParameterWithShape(pyshape(T))
+  for (v, T, i) in zip(arguments(ir), argtypes(ir), 1:length(arguments(ir)))
+    env[v] = xlaclient.ops.Parameter(builder, i-1, pyshape(T))
   end
   for (v, st) in ir
     ex = st.expr
@@ -142,6 +142,6 @@ end
 
 function compile(ir::IR)
   ir = controlflow(ir)
-  comp = build(ir).Compile()
+  comp = xlaclient.get_local_backend().compile(build(ir))
   return (xs...) -> wrapvalue.(comp.Execute(buffer.(xs)))
 end
