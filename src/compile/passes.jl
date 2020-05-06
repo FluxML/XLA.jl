@@ -2,6 +2,12 @@ function broadcasts!(ir)
   for (v, st) in ir
     ex = st.expr
     if isexpr(ex, :call) && ex.args[1] == Broadcast.broadcasted
+      # TODO: better to detect redundancy by analysis of `f`.
+      if ex.args[3] == identity ||
+         (ex.args[3] == conj && exprtype(ir, ex.args[4]) isa AType{<:AbstractArray{<:Real}})
+        ir[v] = ex.args[4]
+        continue
+      end
       f = exprtype(ir, ex.args[3])
       args = exprtype.((ir,), ex.args[4:end])
       args = eltype.(widen.(args))
