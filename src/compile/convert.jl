@@ -86,6 +86,12 @@ xlaop(args, ::AType{typeof(broadcast)}, _...) =
 xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
   xcall(Dot(), args[2:end]...)
 
+@abstract Operations adjoint(x::Vector{<:XScalar}) = Mjolnir.Shape{Matrix{eltype(x)}}((1, size(x)[1]))
+@abstract Operations adjoint(x::Matrix{<:XScalar}) = Mjolnir.Shape{Matrix{eltype(x)}}(reverse(size(x)))
+
+xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Vector}) = xcall(Reshape([0], [1, size(x)[1]]), args[2])
+xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Matrix}) = xcall(Reshape([0,1], [reverse(size(x))...]), args[2])
+
 xlaop(args, ::AType{typeof(repr)}, x) = args[2]
 
 fieldnum(T, f) = findfirst(==(f), fieldnames(T))

@@ -59,6 +59,14 @@ end
 build!(builder, op::ConvertElementType, x) =
   builder.ConvertElementType(x, primitivetype(op.to))
 
+struct Reshape
+  dims::Vector{Int}
+  size::Vector{Int}
+end
+
+build!(builder, op::Reshape, x) =
+  builder.Reshape(x, op.dims, op.size)
+
 struct Conditional end
 
 function build!(builder, ::Conditional, pred,
