@@ -81,7 +81,11 @@ end
 xlaop(args, ::AType{typeof(broadcast)}, _...) =
   Expr(:call, Map(), args[3:end]..., args[2])
 
-@abstract Operations (a::Matrix{T} * b::Vector{T}) where T<:XScalar = Vector{T}
+@abstract Operations function (a::Matrix{T} * b::Vector{T}) where T<:XScalar
+  n, m = size(a)
+  m == size(b)[1] || error("Dimension mismatch")
+  Mjolnir.Shape{Vector{T}}((n,))
+end
 
 xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
   xcall(Dot(), args[2:end]...)
