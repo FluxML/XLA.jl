@@ -24,8 +24,15 @@ include("compile/rt.jl")
 
 include("lib.jl")
 
+macro code_typed(ex)
+  @capture(ex, f_(args__)) || error("@code_typed f(args...)")
+  quote
+    trace(Const($(esc(f))), xtypeof.(($(esc.(args)...),))...)
+  end
+end
+
 macro code_xla(ex)
-  @capture(ex, f_(args__)) || error("@trace f(args...)")
+  @capture(ex, f_(args__)) || error("@code_xla f(args...)")
   quote
     tr = trace(Const($(esc(f))), xtypeof.(($(esc.(args)...),))...)
     deletearg!(tr, 1)
