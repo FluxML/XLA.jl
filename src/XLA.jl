@@ -27,7 +27,7 @@ include("lib.jl")
 macro code_typed(ex)
   @capture(ex, f_(args__)) || error("@code_typed f(args...)")
   quote
-    trace(Const($(esc(f))), xtypeof.(($(esc.(args)...),))...)
+    trace(Const($(esc(f))), xtypeof.(($(esc.(args)...),))...) |> renumber
   end
 end
 
