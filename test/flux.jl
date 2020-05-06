@@ -1,5 +1,5 @@
 using Flux, XLA, Test
 
-f(x) = gradient(x -> sum(x), x)
+f(x) = gradient(x -> sum(x.*x), x)
 
-@test xla(f)([1, 2, 3])[1] == [1, 1, 1]
+@test collect(xla(f)([1, 2, 3])[1]) == [2, 4, 6]
