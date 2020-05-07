@@ -11,8 +11,8 @@ xtypeof(x) = Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnam
 
 layout(x::Type{<:XScalar}) = [x]
 layout(::Const) = []
-layout(x::Shape) = [x]
-layout(x::Mjolnir.Shape) = [Shape(eltype(x), size(x))]
+layout(x::XShape) = [x]
+layout(x::Mjolnir.Shape) = [XShape(eltype(x), size(x))]
 layout(x::Type{<:Array{<:XScalar}}) = [x]
 layout(x::Partial) = vcat(map(i -> layout(x.value[i]), 1:fieldcount(widen(x)))...)
 layout(x::Type) = vcat(map(f -> layout(fieldtype(x, f)), fieldnames(x))...)

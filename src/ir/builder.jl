@@ -18,33 +18,33 @@ juliatype(T) = numpy2julia[T.name]
 
 # Shapes
 
-struct Shape{T,N}
+struct XShape{T,N}
   dims::NTuple{N,Int}
 end
 
-Shape(T::Type{<:XScalar}, sh::NTuple{N,Integer}) where N = Shape{T,N}(sh)
+XShape(T::Type{<:XScalar}, sh::NTuple{N,Integer}) where N = XShape{T,N}(sh)
 
-shapeof(x::AbstractArray) = Shape{eltype(x),ndims(x)}(size(x))
+shapeof(x::AbstractArray) = XShape{eltype(x),ndims(x)}(size(x))
 
-Base.eltype(::Shape{T}) where T = T
-Base.ndims(::Shape{T,N}) where {T,N} = N
+Base.eltype(::XShape{T}) where T = T
+Base.ndims(::XShape{T,N}) where {T,N} = N
 
-PyObject(sh::Shape) = xlaclient.Shape.array_shape(numpytype(eltype(sh)), sh.dims)
-pyshape(sh::Shape) = PyObject(sh)
+PyObject(sh::XShape) = xlaclient.Shape.array_shape(numpytype(eltype(sh)), sh.dims)
+pyshape(sh::XShape) = PyObject(sh)
 
-Base.show(io::IO, sh::Shape) = print(io, eltype(sh), "[", join(sh.dims, ","), "]")
+Base.show(io::IO, sh::XShape) = print(io, eltype(sh), "[", join(sh.dims, ","), "]")
 
-function Shape(sh::PyObject)
+function XShape(sh::PyObject)
   T = juliatype(sh.numpy_dtype())
   size = sh.dimensions()
-  Shape{T,length(size)}(size)
+  XShape{T,length(size)}(size)
 end
 
-shapeof(p::PyObject) = p.is_array() ? Shape(p) : (shapeof.(p.tuple_shapes())...,)
+shapeof(p::PyObject) = p.is_array() ? XShape(p) : (shapeof.(p.tuple_shapes())...,)
 
 pyshape(x::Tuple) = xlaclient.Shape.tuple_shape(pyshape.(x))
 
-pyshape(x::Type{<:XScalar}) = pyshape(Shape(x, ()))
+pyshape(x::Type{<:XScalar}) = pyshape(XShape(x, ()))
 
 # Values
 
@@ -65,7 +65,7 @@ function XArray(data::Array{<:XScalar})
 end
 
 function XArray(buf::PyObject, own = true)
-  sh = Shape(buf.shape())
+  sh = XShape(buf.shape())
   x = XArray{eltype(sh),ndims(sh)}(buf)
   own && setup_finaliser(x)
   return x
