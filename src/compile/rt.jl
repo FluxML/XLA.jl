@@ -59,6 +59,12 @@ function (f::XFunction)(args...)
   return rebuild(out, xla_f(toxla(args)...)) |> printstuff
 end
 
+function Base.show(io::IO, f::XFunction)
+  print(io, "xla(")
+  show(io, f.func)
+  print(io, ")")
+end
+
 invokeoriginal(f::XFunction, args...) = f.func(args...)
 
 instead(::Operations, args, F::AType{<:XFunction}, xs...) =
