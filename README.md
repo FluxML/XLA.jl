@@ -168,6 +168,60 @@ julia> @code_xla softmax([1, 2, 3])
 
 </details>
 
+XLA's internal text representation, HLO text:
+
+<details>
+
+```julia
+julia> @code_hlo softmax([1, 2, 3])
+HloModule name__44.31
+
+name__45.3 {
+  parameter.4 = s64[]invalid{} parameter(0)
+  parameter.5 = s64[]invalid{} parameter(1)
+  ROOT maximum.6 = s64[]invalid{} maximum(parameter.4, parameter.5)
+}
+
+name__46.8 {
+  parameter.9 = s64[]invalid{} parameter(0)
+  parameter.10 = s64[]invalid{} parameter(1)
+  ROOT subtract.11 = s64[]invalid{} subtract(parameter.9, parameter.10)
+}
+
+name__47.14 {
+  parameter.15 = s64[]invalid{} parameter(0)
+  convert.16 = f64[]invalid{} convert(parameter.15)
+  ROOT exponential.17 = f64[]invalid{} exponential(convert.16)
+}
+
+name__48.20 {
+  parameter.21 = f64[]invalid{} parameter(0)
+  parameter.22 = f64[]invalid{} parameter(1)
+  ROOT add.23 = f64[]invalid{} add(parameter.21, parameter.22)
+}
+
+name__49.25 {
+  parameter.26 = f64[]invalid{} parameter(0)
+  parameter.27 = f64[]invalid{} parameter(1)
+  ROOT divide.28 = f64[]invalid{} divide(parameter.26, parameter.27)
+}
+
+ENTRY name__44.31 {
+  parameter.1 = s64[3] parameter(0)
+  constant.2 = s64[] constant(0)
+  reduce.7 = s64[] reduce(parameter.1, constant.2), dimensions={0}, to_apply=name__45.3
+  broadcast.12 = s64[3]{0} broadcast(reduce.7), dimensions={}
+  map.13 = s64[3]{0} map(parameter.1, broadcast.12), dimensions={0}, to_apply=name__46.8
+  map.18 = f64[3]{0} map(map.13), dimensions={0}, to_apply=name__47.14
+  constant.19 = f64[] constant(0)
+  reduce.24 = f64[] reduce(map.18, constant.19), dimensions={0}, to_apply=name__48.20
+  broadcast.29 = f64[3]{0} broadcast(reduce.24), dimensions={}
+  ROOT map.30 = f64[3]{0} map(map.18, broadcast.29), dimensions={0}, to_apply=name__49.25
+}
+```
+
+</details>
+
 You may want to start with simpler examples like `@code_xla 1+2.0` or
 `@code_xla (1+2im)*(3+4im)`.
 
