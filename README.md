@@ -1,118 +1,180 @@
 # XLA
 
-[![Build Status](https://travis-ci.org/MikeInnes/XLA.jl.svg?branch=master)](https://travis-ci.org/MikeInnes/XLA.jl)
-
-XLA provides access to [XLA and the XRT runtime](https://www.tensorflow.org/xla), including the ability to build and compile XLA computations using the [IRTools](https://github.com/MikeInnes/IRTools.jl) format.
+[![Build Status](https://travis-ci.org/FluxML/XLATools.jl.svg?branch=master)](https://travis-ci.org/FluxML/XLATools.jl)
 
 ```julia
-] add IRTools#master https://github.com/MikeInnes/XLA.jl
+] add IRTools#master
+] add https://github.com/MikeInnes/Mjolnir.jl
+] add https://github.com/FluxML/XLATools.jl#next
 ```
 
-Run XLA ops directly (slow but useful for testing/debugging):
+Compile your Julia code to XLA. This package is part of the [Flux](https://github.com/FluxML/Flux.jl) ML ecosystem and is designed to work well with its other packages, including the [Zygote](https://github.com/FluxML/Zygote.jl) automatic differentiation engine.
+
+## Supported Features
+
+Convert a Julia function to XLA:
 
 ```julia
-julia> using XLA
+julia> using Flux, XLA
 
-julia> XLA.Mul()(2, 3)
-2019-09-17 14:29:42.711650: I external/org_tensorflow/tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 3600000000 Hz
-...
-6
+julia> xadd = xla(+);
 
-julia> t = XLA.XTuple()(5, 6)
-(5, 6)
+julia> xadd(2, 2.5)
+2020-05-07 11:59:19.973581: I external/org_tensorflow/tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7ffe8239e680 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+2020-05-07 11:59:19.973603: I external/org_tensorflow/tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+4.5
 
-julia> XLA.GetTupleElement(0)(t)
-5
+julia> m = Chain(Dense(10, 5, relu), Dense(5, 2), softmax) |> f64;
 
-julia> XLA.Add()([1, 2], [3, 4])
-2-element XLA.XArray{Int64,1}:
- 4
- 6
+julia> xm = xla(m);
+
+julia> xm(rand(10))
+2-element XLA.XArray{Float64,1}:
+ 0.499667314539429
+ 0.5003326854605711
 ```
 
-Ops are named as in XLA proper (see the [reference](https://www.tensorflow.org/xla/operation_semantics)), except for `XTuple`. All ops are parameterised, which means you construct them with any options before invoking them.
-
-Build and invoke a simple computation, the polynomial `3x^2 + 2x + 1`:
+Hello world:
 
 ```julia
-julia> using XLA: Mul, Add, Pow, compile
+julia> function hello()
+         if isxla()
+           println("Hello from XLA!")
+         else
+           println("Not running XLA :(")
+         end
+       end
 
-julia> using IRTools: IR, argument!, xcall
+julia> hello()
+Not running XLA :(
 
-julia> ir = IR();
-
-julia> x = argument!(ir, Int);
-
-julia> poly = xcall(Add(), xcall(Mul(), 3, xcall(Pow(), x, 2)),
-                           xcall(Add(), xcall(Mul(), 2, x), 1))
-:((Add())((Mul())(3, (Pow())(%1, 2)), (Add())((Mul())(2, %1), 1)))
-
-julia> push!(ir, poly);
-
-julia> ir
-1: (%1 :: Int64)
-  %2 = (Pow())(%1, 2)
-  %3 = (Mul())(3, %2)
-  %4 = (Mul())(2, %1)
-  %5 = (Add())(%4, 1)
-  %6 = (Add())(%3, %5)
-
-julia> f = compile(ir);
-
-julia> f(5)
-86
+julia> xla(hello)()
+Hello from XLA!
 ```
 
-Writing IR by hand is a bit tedious; we can actually use Julia to do most of the work for us.
+Generic functions and types:
 
 ```julia
-julia> @eval relu = x -> $(Gt())(x, 0) ? x : 0
-#15 (generic function with 1 method)
+julia> square = xla(x -> @show x^2);
 
-julia> ir = @code_ir relu(1)
-1: (%1, %2)
-  %3 = (Gt())(%2, 0)
-  br 2 unless %3
-  return %2
-2:
-  return 0
+julia> square(5)
+x ^ 2 = 25
+25
+
+julia> square(1+2im)
+x ^ 2 = -3 + 4im
+-3 + 4im
 ```
 
-Compile it:
+If/else and data structures (loop support is on the roadmap):
 
 ```julia
-julia> IRTools.argtypes(ir)[:] = [(), Int]
-2-element Array{Any,1}:
- ()   
- Int64
+julia> function updatezero!(env)
+         if env[:x] < 0
+           env[:x] = 0
+         end
+       end
 
-julia> f = compile(ir)
-#10 (generic function with 1 method)
+julia> function myrelu(x)
+         env = Dict()
+         env[:x] = x
+         updatezero!(env)
+         return env[:x]
+       end
 
-julia> f((), 1), f((), -1)
-(1, 0)
+julia> xrelu = xla(myrelu);
+
+julia> xrelu(5), xrelu(-5)
+(5, 0)
 ```
 
-If you're familiar with XLA you might notice that we're not using its "functional" control flow here, but instead normal SSA branches. The idea is to abstract over XLA's _somewhat idiosyncratic_ `Conditional` and `While` with something more convenient, that gets lowered to those calls when compiling. It's easy to see what the native equivalent looks like:
+We also want to support mutating array operations in future.
+
+## Under the Hood
+
+See the results of type inference:
+
+<details>
 
 ```julia
-julia> XLA.controlflow(ir)
-1: (%1 :: (), %2 :: Int64)
-  %3 = (Gt())(%2, 0)
-  %4 = (XLA.Not())(%3)
+julia> XLA.@code_typed softmax([1, 2, 3])
+1: (%1 :: const(softmax), %2 :: Mjolnir.Shape{Array{Int64,1}}((3,)))
+  %3 =
+    1: (%1 :: const(max), %2 :: Int64, %3 :: Int64)
+      %4 = (max)(%2, %3) :: Int64
+      return %4
+  %4 = (Mjolnir.KwFunc{typeof(mapreduce)}())((dims = 1,), mapreduce, identity, %3, %2) :: Int64
   %5 =
-    1: (%1)
-      %2 = (XTuple())(0)
-  %6 =
-    1: (%1)
-  %7 = (XTuple())()
-  %8 = (XTuple())(%2)
-  %9 = (Conditional())(%4, %7, %5, %8, %6)
-  %10 = (GetTupleElement(0))(%9)
+    1: (%1 :: const(-), %2 :: Int64, %3 :: Int64)
+      %4 = (-)(%2, %3) :: Int64
+      return %4
+  %6 = (broadcast)(%5, %2, %4) :: Mjolnir.Shape{Array{Int64,1}}((3,))
+  %7 =
+    1: (%1 :: const(exp), %2 :: Int64)
+      %3 = (Float64)(%2) :: Float64
+      %4 = (exp)(%3) :: Float64
+      return %4
+  %8 = (broadcast)(%7, %6) :: Mjolnir.Shape{Array{Float64,1}}((3,))
+  %9 =
+    1: (%1 :: const(add_sum), %2 :: Float64, %3 :: Float64)
+      %4 = (+)(%2, %3) :: Float64
+      return %4
+  %10 = (Mjolnir.KwFunc{typeof(mapreduce)}())((dims = 1,), mapreduce, identity, %9, %8) :: Float64
+  %11 =
+    1: (%1 :: const(/), %2 :: Float64, %3 :: Float64)
+      %4 = (/)(%2, %3) :: Float64
+      return %4
+  %12 = (broadcast)(%11, %8, %10) :: Mjolnir.Shape{Array{Float64,1}}((3,))
+  return %12
 ```
 
-Right now only `Conditional`s are supported, but support for `While` is planned.
+</details>
 
-XLA' op support is not yet exhaustive, but new ops are easy to add. For example, the definition for `XTuple` is [only three lines](https://github.com/MikeInnes/XLA.jl/blob/06e3fccdb2e714aab4b112f16da6ceae38e871ed/src/ops.jl#L36-L40).
+See the final XLA code:
+
+<details>
+
+```julia
+julia> @code_xla softmax([1, 2, 3])
+1: (%1 :: Int64[3])
+  %2 =
+    1: (%2 :: Int64, %3 :: Int64)
+      %4 = (XLA.Max())(%2, %3) :: Int64
+      return %4
+  %3 = (XLA.Reduce(1))(%2, %1, 0)
+  %4 =
+    1: (%2 :: Int64, %3 :: Int64)
+      %4 = (XLA.Sub())(%2, %3) :: Int64
+      return %4
+  %5 = (XLA.Map())(%4, %1, %3)
+  %6 =
+    1: (%2 :: Int64)
+      %3 = (XLA.ConvertElementType(Float64))(%2) :: Float64
+      %4 = (XLA.Exp())(%3) :: Float64
+      return %4
+  %7 = (XLA.Map())(%6, %5)
+  %8 =
+    1: (%2 :: Float64, %3 :: Float64)
+      %4 = (XLA.Add())(%2, %3) :: Float64
+      return %4
+  %9 = (XLA.Reduce(1))(%8, %7, 0.0)
+  %10 =
+    1: (%2 :: Float64, %3 :: Float64)
+      %4 = (XLA.Div())(%2, %3) :: Float64
+      return %4
+  %11 = (XLA.Map())(%10, %7, %9)
+  return %11
+```
+
+</details>
+
+You may want to start with simpler examples like `@code_xla 1+2.0` or
+`@code_xla (1+2im)*(3+4im)`.
+
+## Limitations & Notes
+
+XLA is a specialised backend with limitations, primarily in terms of support for dynamic memory allocation – so we don't expect to be able to support all Julia code. Vectorised array code without too much fanciness (including Flux models) should work well; just don't expect to point XLA at any huge Julia codebase and have it work out of the box.
+
+Error handling is so-so right now. If you run into errors, please do open issues; we'll either support your use case or at least add better diagnostics to explain why the code can't be compiled.
 
 XLA reuses [JAX's](https://github.com/google/jax) build of XLA via `pip`. A CPU-only build is installed by default; if you want GPU support you can [use your own python](https://github.com/JuliaPy/PyCall.jl#specifying-the-python-version) and install the GPU-enabled jaxlib as per the jax docs.
