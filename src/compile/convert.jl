@@ -50,6 +50,7 @@ instead(::Operations, args, ::AType{typeof(<)}, a::AType{<:XScalar}, b::AType{<:
   abstract(Operations(), Const(convert), Const(T), S)
 
 @abstract Operations fill(x::Const, sz::Const) = Const(fill(x.value, sz.value))
+@abstract Operations ones(x::Const{<:Tuple{Vararg{Integer}}}) = Const(ones(x.value))
 
 xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
   xcall(ConvertElementType(T), args[3])
@@ -82,16 +83,25 @@ xlaop(args, ::AType{typeof(broadcast)}, _...) =
   Expr(:call, Map(), args[3:end]..., args[2])
 
 @abstract Operations function (a::Matrix{T} * b::Vector{T}) where T<:XScalar
+  a isa Const && b isa Const && return Const(a.value * b.value)
   n, m = size(a)
   m == size(b)[1] || error("Dimension mismatch")
   Mjolnir.Shape{Vector{T}}((n,))
 end
 
+@abstract Operations function (a::Vector{T} * b::Matrix{T}) where T<:XScalar
+  a isa Const && b isa Const && return Const(a.value * b.value)
+  n, = size(a)
+  size(b)[1] == 1 || error("Dimension mismatch")
+  Mjolnir.Shape{Vector{T}}((n,size(b)[2]))
+end
+
 xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
   xcall(Dot(), args[2:end]...)
 
-@abstract Operations adjoint(x::Vector{<:XScalar}) = Mjolnir.Shape{Matrix{eltype(x)}}((1, size(x)[1]))
-@abstract Operations adjoint(x::Matrix{<:XScalar}) = Mjolnir.Shape{Matrix{eltype(x)}}(reverse(size(x)))
+@abstract Operations adjoint(x::Shape{Vector{T}}) where T<:XScalar = Mjolnir.Shape{Matrix{T}}((1, size(x)[1]))
+@abstract Operations adjoint(x::Shape{Matrix{T}}) where T<:XScalar = Mjolnir.Shape{Matrix{T}}(reverse(size(x)))
+@abstract Operations adjoint(x::Const{<:Array{<:XScalar}}) = Const(collect(adjoint(x.value)))
 
 xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Vector}) = xcall(Reshape([0], [1, size(x)[1]]), args[2])
 xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Matrix}) = xcall(Reshape([0,1], [reverse(size(x))...]), args[2])

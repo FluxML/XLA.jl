@@ -4,7 +4,7 @@ using IRTools, IRTools.All, PyCall, Mjolnir, MacroTools
 using IRTools: block
 using IRTools.Inner: entry
 using MacroTools: @capture
-import Mjolnir: AType, Partial, Multi, Basic, Const, KwFunc, abstract, instead,
+import Mjolnir: AType, Partial, Shape, Multi, Basic, Const, KwFunc, abstract, instead,
   ptuple, widen, @abstract
 
 export @code_xla, xla, isxla
