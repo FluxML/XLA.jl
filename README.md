@@ -88,7 +88,39 @@ julia> xrelu(5), xrelu(-5)
 (5, 0)
 ```
 
-We also want to support mutating array operations in future.
+Take a gradient:
+
+```julia
+julia> W = randn(2, 3);
+
+julia> f(x) = gradient((W, x) -> sum(W*x), W, x);
+
+julia> W̄, x̄ = xla(f)(rand(3))
+([-0.8832944966219527, 2.7865176392411346, 0.8122694890142825], [-0.8832944966219527, 2.7865176392411346, 0.8122694890142825])
+
+julia> typeof(ans)
+Tuple{XLA.XArray{Float64,1},Array{Float64,1}}
+```
+
+(Why is the gradient `x̄` an `Array`, and not an `XArray`? In fact `x̄` is a
+constant regardless of the input `x`, so the gradient is computed at compile
+time and never goes near XLA. If not for the computation of `W̄` the XLA code
+would be a no-op.)
+
+<details>
+
+```julia
+julia> f(x) = gradient(x -> sum(W*x), x);
+
+julia> XLA.@code_xla f(rand(3))
+1: (%1 :: Float64[3])
+  %2 = ([-1.4783050895216538, -0.317112271139274, -0.32011307414342466],)
+  return %2
+```
+
+</details>
+
+We also want to support mutating array operations, in future.
 
 ## Under the Hood
 
