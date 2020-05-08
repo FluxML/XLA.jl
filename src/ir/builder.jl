@@ -79,6 +79,7 @@ Base.size(x::XArray) = x.buffer.shape().dimensions()
 Base.collect(x::XArray) = npy2julia(x.buffer.to_py())
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 Base.show_vector(io::IO, x::XArray) = Base.show_vector(io, collect(x))
+Base._show_nonempty(io::IO, x::XArray, prefix::String) = Base._show_nonempty(io, collect(x), prefix)
 
 scalar(x::PyObject) = get(x, ())
 scalar(x::Array) = x[]
