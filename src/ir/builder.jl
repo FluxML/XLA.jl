@@ -73,7 +73,7 @@ end
 
 PyObject(x::XArray) = x.buffer
 
-npy2julia(x::PyObject) = reshape(x.flatten(), x.shape)
+npy2julia(x::PyObject) = reshape(x.transpose().flatten(), x.shape)
 
 Base.size(x::XArray) = x.buffer.shape().dimensions()
 Base.collect(x::XArray) = npy2julia(x.buffer.to_py())

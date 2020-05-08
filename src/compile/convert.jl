@@ -82,7 +82,7 @@ end
 xlaop(args, ::AType{typeof(broadcast)}, _...) =
   Expr(:call, Map(), args[3:end]..., args[2])
 
-@abstract Operations function (a::Matrix{T} * b::Vector{T}) where T<:XScalar
+@abstract Operations function (a::Matrix{T} * b::Union{Matrix{T},Vector{T}}) where T<:XScalar
   a isa Const && b isa Const && return Const(a.value * b.value)
   n, m = size(a)
   m == size(b)[1] || error("Dimension mismatch")
@@ -96,8 +96,11 @@ end
   Mjolnir.Shape{Vector{T}}((n,size(b)[2]))
 end
 
-xlaop(args, ::AType{typeof(*)}, a::AType{<:Array{T}}, b::AType{<:Array{T}}) where T<:XScalar =
-  xcall(Dot(), args[2:end]...)
+function xlaop!(ir, v, ::AType{typeof(*)}, A::AType{<:Array{T}}, B::AType{<:Array{T}}) where T<:XScalar
+  _, a, b = ir[v].expr.args
+  A isa AType{<:Vector} && (a = insert!(ir, v, xcall(Reshape([0], [size(A)[1], 1]), a)))
+  ir[v] = xcall(Dot(), a, b)
+end
 
 @abstract Operations adjoint(x::Shape{Vector{T}}) where T<:XScalar = Mjolnir.Shape{Matrix{T}}((1, size(x)[1]))
 @abstract Operations adjoint(x::Shape{Matrix{T}}) where T<:XScalar = Mjolnir.Shape{Matrix{T}}(reverse(size(x)))
