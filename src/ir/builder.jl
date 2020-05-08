@@ -73,7 +73,9 @@ end
 
 PyObject(x::XArray) = x.buffer
 
+# PyCall seems to sometimes convert arrays, sometimes not.
 npy2julia(x::PyObject) = reshape(x.transpose().flatten(), x.shape)
+npy2julia(x) = x
 
 Base.size(x::XArray) = x.buffer.shape().dimensions()
 Base.collect(x::XArray) = npy2julia(x.buffer.to_py())
