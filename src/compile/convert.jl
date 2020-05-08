@@ -67,7 +67,12 @@ for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (/, :Div), (^, :Pow), (>, :Gt
           xcall($xop(), args[2:end]...)
 end
 
-for (op, xop) in [(exp, :Exp)]
+@abstract Operations -(a::Const{T}) where T<:XScalar = Const(-a.value)
+@abstract Operations -(a::AType{T}) where T<:XScalar = T
+xlaop(args, ::AType{typeof(-)}, a::AType{T}) where T<:XScalar =
+        xcall(Neg(), args[2:end]...)
+
+for (op, xop) in [(exp, :Exp), (sin, :Sin), (cos, :Cos)]
   @eval @abstract Operations $op(a::XFloat) = widen(a)
   @eval xlaop(args, ::AType{typeof($op)}, _) = xcall($xop(), args[2])
 end

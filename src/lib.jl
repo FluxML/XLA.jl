@@ -11,5 +11,7 @@ function requires()
       [nop], [Const(nop)]
     instead(::Operations, args, ::AType{typeof(Zygote.accum_param)}, _...) =
       [nop], [Const(nop)]
+    instead(::Operations, args, ::AType{typeof(Zygote._push!)}, xs, x) =
+      [push!, args[2], args[3]], [Const(push!), xs, x]
   end
 end
