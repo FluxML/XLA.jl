@@ -11,6 +11,7 @@ MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 Mjolnir = "1154507a-7ac2-44fe-9f15-34617bca9db5"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
 julia = "1"

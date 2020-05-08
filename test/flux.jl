@@ -6,3 +6,9 @@ x, y = randn(2), randn(1, 2)
 f(x) = gradient(x -> sum(x.*x), x)
 
 @test collect(xla(f)([1, 2, 3])[1]) == [2, 4, 6]
+
+W = rand(2, 3)
+
+f(x) = gradient(x -> sum(W*x), x)
+
+@test collect(xla(f)([1.0, 2, 3])[1]) == f([1.0, 2, 3])[1]
