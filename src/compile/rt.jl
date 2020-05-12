@@ -9,6 +9,7 @@ rebuild(T::AType{<:Union{XScalar,Array,Bool}}, xs) = T isa Const ? T.value : pop
 # Where they don't (i.e. XArray) we should go via Functors.jl.
 constructor(T::Type) = T.name.wrapper
 constructor(T::Type{<:Tuple}) = tuple
+constructor(T::Type{<:NamedTuple{K}}) where K = (xs...) -> NamedTuple{K}(xs)
 
 function rebuild(T::Partial, xs)
   xs = rebuild.(T.value, (xs,))

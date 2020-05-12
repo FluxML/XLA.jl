@@ -7,7 +7,7 @@ exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 xtypeof(x::XScalar) = typeof(x)
 xtypeof(x::Tuple) = ptuple(xtypeof.(x)...)
 xtypeof(x::Array{<:XScalar}) = Mjolnir.Shape{typeof(x)}(size(x))
-xtypeof(x) = Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
+xtypeof(x) = isbits(x) && nfields(x) == 0 ? Const(x) : Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
 
 layout(x::Type{<:XScalar}) = [x]
 layout(::Const) = []
@@ -79,7 +79,7 @@ end
 
 for (op, xop) in [(+, :Add), (-, :Sub)]
   @eval @abstract Operations $op(a::T, b::T) where T<:Array{<:XScalar} =
-    Core.Compiler.return_type($op, Tuple{T,T})
+    Shape{Array{eltype(a),ndims(a)}}(size(a))
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:Array{<:XScalar} =
           xcall($xop(), args[2:end]...)
 end
@@ -157,6 +157,10 @@ function xlaop!(ir, v, ::AType{typeof(Mjolnir.__new__)}, ::AType{Type{T}}, xs...
   tuplecat!(ir, v, args)
 end
 
+function xlaop!(ir, v, ::AType{typeof(Mjolnir.__splatnew__)}, ::AType{Type{T}}, xs) where T
+  ir[v] = ir[v].expr.args[3]
+end
+
 function xlaop!(ir, v, ::AType{typeof(tuple)}, xs...)
   args = ir[v].expr.args[2:end]
   tuplecat!(ir, v, args)
@@ -197,6 +201,9 @@ function xlaops!(ir)
       ir[v] = xlaops!(st.expr)
     end
   end
+  # TODO: more fine grained way of ensuring the right return value.
+  t = push!(ir, xcall(XTuple(), returnvalue(blocks(ir)[end])))
+  push!(ir, xcall(GetTupleElement(0), t))
   return ir
 end
 
