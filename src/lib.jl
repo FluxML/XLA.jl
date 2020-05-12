@@ -19,5 +19,6 @@ function requires()
   @require Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c" begin
     instead(::Operations, args, ::AType{typeof(Flux.xlogy)}, x, y) =
       [xlogy, args[2], args[3]], [Const(xlogy), x, y]
+    constructor(::Type{<:Flux.Chain}) = xs -> Flux.Chain(xs...)
   end
 end
