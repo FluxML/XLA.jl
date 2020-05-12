@@ -158,7 +158,6 @@ function xlaop!(ir, v, ::AType{typeof(getfield)}, T::AType, i::Const{Symbol})
 end
 
 function xlaop!(ir, v, ::AType{typeof(Mjolnir.__new__)}, ::AType{Type{T}}, xs...) where T
-  @assert layout(T) == layout(Partial{Tuple{widen.(xs)...}}(xs))
   args = ir[v].expr.args[3:end]
   tuplecat!(ir, v, args)
 end
