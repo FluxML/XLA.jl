@@ -25,9 +25,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "5322d34d7600d3429665b37bcf7628dc602a28cc"
+git-tree-sha1 = "6c89d5b673e59b8173c546c84127e5f623d865f6"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.8.8"
+version = "0.8.9"
 
 [[IRTools]]
 deps = ["InteractiveUtils", "MacroTools", "Test"]
@@ -69,7 +69,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[Mjolnir]]
 deps = ["IRTools", "MacroTools"]
-git-tree-sha1 = "7bb6d1588749acf7c8f07a20dfcbea2ca81e19a9"
+git-tree-sha1 = "86c486b3de356f66d638f32d1ba28cb1cb01fd94"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/Mjolnir.jl"
 uuid = "1154507a-7ac2-44fe-9f15-34617bca9db5"
