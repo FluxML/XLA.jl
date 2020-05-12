@@ -101,6 +101,7 @@ default_device() = xlaclient.get_local_backend().devices()[1]
 
 buffer(x::Array{<:XScalar}) = xlaclient.Buffer.from_pyval(x)
 buffer(x::XScalar) = xlaclient.Buffer.from_pyval(x)
+buffer(x::XArray) = x.buffer
 
 # IR Builder
 

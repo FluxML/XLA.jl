@@ -7,6 +7,7 @@ exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 xtypeof(x::XScalar) = typeof(x)
 xtypeof(x::Tuple) = ptuple(xtypeof.(x)...)
 xtypeof(x::Array{<:XScalar}) = Mjolnir.Shape{typeof(x)}(size(x))
+xtypeof(x::XArray{T,N}) where {T,N} = Mjolnir.Shape{Array{T,N}}(size(x)) 
 xtypeof(x) = isbits(x) && nfields(x) == 0 ? Const(x) : Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
 
 layout(x::Type{<:XScalar}) = [x]

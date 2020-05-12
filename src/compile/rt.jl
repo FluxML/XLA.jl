@@ -1,4 +1,5 @@
 toxla(x::XScalar) = Any[x]
+toxla(x::XArray) = Any[x]
 toxla(x::Array{<:XScalar}) = Any[x]
 toxla(x) = vcat(map(f -> toxla(getfield(x, f)), fieldnames(typeof(x)))...)
 
