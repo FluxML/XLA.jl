@@ -34,11 +34,16 @@ end
 @abstract Operations repr(x) = x
 @abstract Operations println(xs...) = Partial{Print}(Any[Mjolnir.ptuple(xs...)])
 
+@abstract Basic Base.vect(xs::Const...) = Const([x.value for x in xs])
+
 # Base's `<` does something complicated.
 simplelt(a, b) = <(promote(a, b)...)
 
 instead(::Operations, args, ::AType{typeof(<)}, a::AType{<:XScalar}, b::AType{<:XScalar}) =
   widen(a) == widen(b) ? nothing : ([simplelt, args[2], args[3]], (Const(simplelt), a, b))
+
+instead(::Operations, args, ::AType{typeof(//)}, a::AType{<:XScalar}, b::AType{<:XScalar}) =
+  [(/), args[2], args[3]], [Const(/), a, b]
 
 @abstract Operations convert(::Type{T}, x::Const{<:XScalar}) where T<:XScalar =
   Const(convert(T, x.value))
@@ -72,7 +77,7 @@ end
 xlaop(args, ::AType{typeof(-)}, a::AType{T}) where T<:XScalar =
         xcall(Neg(), args[2:end]...)
 
-for (op, xop) in [(exp, :Exp), (sin, :Sin), (cos, :Cos)]
+for (op, xop) in [(exp, :Exp), (sin, :Sin), (cos, :Cos), (log, :Log)]
   @eval @abstract Operations $op(a::XFloat) = widen(a)
   @eval xlaop(args, ::AType{typeof($op)}, _) = xcall($xop(), args[2])
 end
