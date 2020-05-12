@@ -90,9 +90,6 @@ for (op, xop) in [(+, :Add), (-, :Sub)]
           xcall($xop(), args[2:end]...)
 end
 
-xlaop(args, ::AType{typeof(broadcast)}, _...) =
-  Expr(:call, Map(), args[3:end]..., args[2])
-
 @abstract Operations function (a::Matrix{T} * b::Union{Matrix{T},Vector{T}}) where T<:XScalar
   a isa Const && b isa Const && return Const(a.value * b.value)
   n, m = size(a)
@@ -175,11 +172,17 @@ function xlaop!(ir, v, ::AType{typeof(println)}, xs...)
   tuplecat!(ir, v, ir[v].expr.args[2:end])
 end
 
-function xlaop!(ir, v, ::AType{typeof(broadcast)}, _...)
+function xlaop!(ir, v, ::AType{typeof(broadcast)}, f, As...)
   args = ir[v].expr.args
   f = ir[args[2]].expr
   strip_self_arg!(f)
-  ir[v] = Expr(:call, Map(),  args[2], args[3:end]...)
+  xs = args[3:end]
+  for i = 1:length(xs)
+    if As[i] isa Const{<:Number}
+      xs[i] = fill(convert(eltype(As[1]), xs[i]), size(As[1]))
+    end
+  end
+  ir[v] = Expr(:call, Map(), args[2], xs...)
 end
 
 # TODO XLA drops dimensions, Julia doesn't; make XLA do the Julia thing.
