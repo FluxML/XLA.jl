@@ -22,7 +22,7 @@ struct XShape{T,N}
   dims::NTuple{N,Int}
 end
 
-XShape(T::Type{<:XScalar}, sh::NTuple{N,Integer}) where N = XShape{T,N}(sh)
+XShape(T::Type{<:Union{XScalar,Bool}}, sh::NTuple{N,Integer}) where N = XShape{T,N}(sh)
 
 shapeof(x::AbstractArray) = XShape{eltype(x),ndims(x)}(size(x))
 
@@ -44,7 +44,7 @@ shapeof(p::PyObject) = p.is_array() ? XShape(p) : (shapeof.(p.tuple_shapes())...
 
 pyshape(x::Tuple) = xlaclient.Shape.tuple_shape(pyshape.(x))
 
-pyshape(x::Type{<:XScalar}) = pyshape(XShape(x, ()))
+pyshape(x::Type{<:Union{XScalar,Bool}}) = pyshape(XShape(x, ()))
 
 # Values
 
