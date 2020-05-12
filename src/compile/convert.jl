@@ -192,6 +192,19 @@ function xlaop!(ir, v, ::AType{typeof(mapreduce)}, ::AType{typeof(identity)}, op
   ir[v] = Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs))))
 end
 
+function xla_identity(T)
+  ir = IR()
+  return!(ir, argument!(ir, T))
+  return ir
+end
+
+function xlaop!(ir, v, ::AType{typeof(ifelse)}, cond, T, F)
+  _, cond, t, f = ir[v].expr.args
+  tfunc = insert!(ir, v, xla_identity(T))
+  ffunc = insert!(ir, v, xla_identity(F))
+  ir[v] = xcall(Conditional(), cond, t, tfunc, f, ffunc)
+end
+
 xlaop!(ir, v, ::AType{<:KwFunc}, kw::Const, f, args...) =
   xlaop!(ir, v, f, args...; kw.value...)
 
