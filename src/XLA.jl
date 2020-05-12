@@ -1,5 +1,7 @@
 module XLA
 
+@nospecialize
+
 using IRTools, IRTools.All, PyCall, Mjolnir, MacroTools
 using IRTools: block
 using IRTools.Inner: entry
