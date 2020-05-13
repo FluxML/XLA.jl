@@ -10,6 +10,8 @@
 
 Compile your Julia code to XLA. This package is part of the [Flux](https://github.com/FluxML/Flux.jl) ML ecosystem and is designed to work well with its other packages, including the [Zygote](https://github.com/FluxML/Zygote.jl) automatic differentiation engine.
 
+**This project is in early alpha.** You can see some capability demos below, or some larger examples in the [examples folder](/examples/). You'll want to use the project/manifest in that directory as the examples currently depend on some development versions.
+
 ## Supported Features
 
 Convert a Julia function to XLA:
@@ -263,4 +265,4 @@ XLA is a specialised backend with limitations, primarily in terms of support for
 
 Error handling is so-so right now. If you run into errors, please do open issues; we'll either support your use case or at least add better diagnostics to explain why the code can't be compiled.
 
-XLA reuses [JAX's](https://github.com/google/jax) build of XLA via `pip`. A CPU-only build is installed by default; if you want GPU support you can [use your own python](https://github.com/JuliaPy/PyCall.jl#specifying-the-python-version) and install the GPU-enabled jaxlib as per the jax docs.
+XLA reuses [JAX's](https://github.com/google/jax) build of XLA via `pip`. A CPU-only build is installed by default; if you want GPU support you can [use your own python](https://github.com/JuliaPy/PyCall.jl#specifying-the-python-version) and install the GPU-enabled jaxlib as per the jax docs. The currently supported jaxlib version is specified in [build.jl](deps/build.jl).
