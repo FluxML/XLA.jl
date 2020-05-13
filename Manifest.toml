@@ -31,11 +31,11 @@ version = "0.8.9"
 
 [[IRTools]]
 deps = ["InteractiveUtils", "MacroTools", "Test"]
-git-tree-sha1 = "85629eb863a8eb9405607f42dbabe0fa1369f7d3"
+git-tree-sha1 = "90ee39f9beaaa186e4968417ea2b8ed5673c91c0"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/IRTools.jl.git"
 uuid = "7869d1d1-7146-5819-86e3-90919afe41df"
-version = "0.3.2"
+version = "0.3.3"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
@@ -69,7 +69,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[Mjolnir]]
 deps = ["IRTools", "MacroTools"]
-git-tree-sha1 = "86c486b3de356f66d638f32d1ba28cb1cb01fd94"
+git-tree-sha1 = "29319e28ff5f628a724c43914debfcde44dedb6e"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/Mjolnir.jl"
 uuid = "1154507a-7ac2-44fe-9f15-34617bca9db5"
