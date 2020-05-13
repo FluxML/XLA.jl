@@ -1,18 +1,24 @@
-name = "XLATools"
+name = "XLA"
 uuid = "e639e2dd-7a4d-472e-a96e-206d6a26373c"
 authors = ["Mike J Innes <mike.j.innes@gmail.com>"]
 version = "0.1.0"
 
 [deps]
 Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 IRTools = "7869d1d1-7146-5819-86e3-90919afe41df"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+Mjolnir = "1154507a-7ac2-44fe-9f15-34617bca9db5"
+NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
 julia = "1"
 
 [extras]
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "Flux"]

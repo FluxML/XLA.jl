@@ -1,6 +1,8 @@
 import PyCall: PyObject
 
-const XScalar = Union{Float64,Float32,Float16,Int64,Int32,Int16}
+const XFloat  = Union{Float64,Float32,Float16}
+const XInt    = Union{Int64,Int32,Int16}
+const XScalar = Union{XFloat,XInt}
 
 const julia2numpy = Dict(
   Float64 => "float64",
@@ -11,37 +13,38 @@ const julia2numpy = Dict(
 const numpy2julia = Dict(v => k for (k, v) in julia2numpy)
 
 numpytype(T) = xlaclient.np.dtype(julia2numpy[T])
+primitivetype(T) = xlaclient.dtype_to_etype(numpytype(T))
 juliatype(T) = numpy2julia[T.name]
 
 # Shapes
 
-struct Shape{T,N}
+struct XShape{T,N}
   dims::NTuple{N,Int}
 end
 
-Shape(T::Type{<:XScalar}, sh::NTuple{N,Integer}) where N = Shape{T,N}(sh)
+XShape(T::Type{<:Union{XScalar,Bool}}, sh::NTuple{N,Integer}) where N = XShape{T,N}(sh)
 
-shapeof(x::AbstractArray) = Shape{eltype(x),ndims(x)}(size(x))
+shapeof(x::AbstractArray) = XShape{eltype(x),ndims(x)}(size(x))
 
-Base.eltype(::Shape{T}) where T = T
-Base.ndims(::Shape{T,N}) where {T,N} = N
+Base.eltype(::XShape{T}) where T = T
+Base.ndims(::XShape{T,N}) where {T,N} = N
 
-PyObject(sh::Shape) = xlaclient.Shape.array_shape(numpytype(eltype(sh)), sh.dims)
-pyshape(sh::Shape) = PyObject(sh)
+PyObject(sh::XShape) = xlaclient.Shape.array_shape(numpytype(eltype(sh)), sh.dims)
+pyshape(sh::XShape) = PyObject(sh)
 
-Base.show(io::IO, sh::Shape) = print(io, eltype(sh), "[", join(sh.dims, ","), "]")
+Base.show(io::IO, sh::XShape) = print(io, eltype(sh), "[", join(sh.dims, ","), "]")
 
-function Shape(sh::PyObject)
+function XShape(sh::PyObject)
   T = juliatype(sh.numpy_dtype())
   size = sh.dimensions()
-  Shape{T,length(size)}(size)
+  XShape{T,length(size)}(size)
 end
 
-shapeof(p::PyObject) = p.is_array() ? Shape(p) : (shapeof.(p.tuple_shapes())...,)
+shapeof(p::PyObject) = p.is_array() ? XShape(p) : (shapeof.(p.tuple_shapes())...,)
 
 pyshape(x::Tuple) = xlaclient.Shape.tuple_shape(pyshape.(x))
 
-pyshape(x::Type{<:XScalar}) = pyshape(Shape(x, ()))
+pyshape(x::Type{<:Union{XScalar,Bool}}) = pyshape(XShape(x, ()))
 
 # Values
 
@@ -62,7 +65,7 @@ function XArray(data::Array{<:XScalar})
 end
 
 function XArray(buf::PyObject, own = true)
-  sh = Shape(buf.shape())
+  sh = XShape(buf.shape())
   x = XArray{eltype(sh),ndims(sh)}(buf)
   own && setup_finaliser(x)
   return x
@@ -70,12 +73,19 @@ end
 
 PyObject(x::XArray) = x.buffer
 
+# PyCall seems to sometimes convert arrays, sometimes not.
+npy2julia(x::PyObject) = reshape(x.transpose().flatten(), x.shape)
+npy2julia(x) = x
+
 Base.size(x::XArray) = x.buffer.shape().dimensions()
-Base.collect(x::XArray) = x.buffer.to_py()
+Base.collect(x::XArray) = npy2julia(x.buffer.to_py())
 Base.print_array(io::IO, x::XArray) = Base.print_array(io, collect(x))
 Base.show_vector(io::IO, x::XArray) = Base.show_vector(io, collect(x))
+Base._show_nonempty(io::IO, x::XArray, prefix::String) = Base._show_nonempty(io, collect(x), prefix)
 
-scalar(x::XArray{T,0}) where T = collect(x)[]
+scalar(x::PyObject) = get(x, ())
+scalar(x::Array) = x[]
+scalar(x::XArray{T,0}) where T = scalar(x.buffer.to_py()) # Array or PyObject? Seems to be random
 scalar(x::XArray) = x
 
 xla(x::XArray) = x
@@ -87,21 +97,30 @@ function wrapvalue(p::PyObject)
   p.shape().is_tuple() ? (wrapvalue.(p.destructure())...,) : scalar(XArray(p))
 end
 
+default_device() = xlaclient.get_local_backend().devices()[1]
+
+buffer(x::Array{<:XScalar}) = xlaclient.Buffer.from_pyval(x)
+buffer(x::XScalar) = xlaclient.Buffer.from_pyval(x)
+buffer(x::XArray) = x.buffer
+
 # IR Builder
 
-function settypes!(builder, comp::IR, ops...)
-  Ts = map(op -> shapeof(builder.GetShape(op)), ops)
+shapeof(builder, op) = shapeof(builder.GetShape(op))
+
+function settypes!(builder, comp::IR, ops...; with = identity)
+  Ts = map(op -> with(shapeof(builder, op)), ops)
   argtypes(comp)[:] = [Ts...]
   return comp
 end
 
 function build(ir::IR)
-  builder = xlaclient.ComputationBuilder("")
+  builder = xlaclient.XlaBuilder("")
   env = Dict()
   resolve(x::Variable) = env[x]
+  resolve(x::QuoteNode) = const!(builder, x.value)
   resolve(x) = const!(builder, x)
-  for (v, T) in zip(arguments(ir), argtypes(ir))
-    env[v] = builder.ParameterWithShape(pyshape(T))
+  for (v, T, i) in zip(arguments(ir), argtypes(ir), 1:length(arguments(ir)))
+    env[v] = xlaclient.ops.Parameter(builder, i-1, pyshape(T))
   end
   for (v, st) in ir
     ex = st.expr
@@ -111,6 +130,8 @@ function build(ir::IR)
       env[v] = ex
     elseif isexpr(ex)
       error("Invalid XLA expression $(ex)")
+    elseif ex isa Variable
+      env[v] = env[ex]
     else
       env[v] = const!(builder, ex)
     end
@@ -125,6 +146,6 @@ end
 
 function compile(ir::IR)
   ir = controlflow(ir)
-  comp = build(ir).Compile()
-  return (xs...) -> wrapvalue(comp.Execute(xlaclient.Buffer.from_pyval.(xs)))
+  comp = xlaclient.get_local_backend().compile(build(ir))
+  return (xs...) -> wrapvalue.(comp.Execute(buffer.(xs)))
 end
