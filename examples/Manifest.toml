@@ -163,7 +163,7 @@ version = "0.8.0"
 
 [[Flux]]
 deps = ["AbstractTrees", "Adapt", "CodecZlib", "Colors", "CuArrays", "DelimitedFiles", "Functors", "Juno", "MacroTools", "NNlib", "Pkg", "Printf", "Random", "Reexport", "SHA", "Statistics", "StatsBase", "Test", "ZipFile", "Zygote"]
-git-tree-sha1 = "a571521658a515f1e88bea2fdd0b84d495c783aa"
+git-tree-sha1 = "99ef42e4b5ee98e699c89bac987cbee75848c66f"
 repo-rev = "master"
 repo-url = "https://github.com/FluxML/Flux.jl.git"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
@@ -419,9 +419,9 @@ version = "1.2.0"
 
 [[XLA]]
 deps = ["Conda", "FillArrays", "IRTools", "MacroTools", "Mjolnir", "NNlib", "PyCall", "Requires"]
-git-tree-sha1 = "6b7b4a194e81a99b2feb50f3343e4a78d0914c14"
-repo-rev = "next"
-repo-url = "https://github.com/FluxML/XLATools.jl"
+git-tree-sha1 = "0cbe08f3294871c28d56de1bcb8b48f78ddc79a6"
+repo-rev = "master"
+repo-url = "https://github.com/FluxML/XLA.jl"
 uuid = "e639e2dd-7a4d-472e-a96e-206d6a26373c"
 version = "0.1.0"
 

@@ -1,11 +1,11 @@
 # XLA
 
-[![Build Status](https://travis-ci.org/FluxML/XLATools.jl.svg?branch=master)](https://travis-ci.org/FluxML/XLATools.jl)
+[![Build Status](https://travis-ci.org/FluxML/XLA.jl.svg?branch=master)](https://travis-ci.org/FluxML/XLA.jl)
 
 ```julia
 ] add IRTools#master
 ] add https://github.com/MikeInnes/Mjolnir.jl
-] add https://github.com/FluxML/XLATools.jl#next
+] add https://github.com/FluxML/XLA.jl
 ```
 
 Compile your Julia code to XLA. This package is part of the [Flux](https://github.com/FluxML/Flux.jl) ML ecosystem and is designed to work well with its other packages, including the [Zygote](https://github.com/FluxML/Zygote.jl) automatic differentiation engine.
