@@ -10,9 +10,9 @@ loss(m, x, y) = logitcrossentropy(m(x), y)
 opt = Optimisers.Descent(1e-3)
 
 function step(m, x, y)
-  m̄ = gradient(m) do m
+  m̄, = gradient(m) do m
     @show crossentropy(m(x), y)
-  end[1]
+  end
   return opt(m, m̄)
 end
 

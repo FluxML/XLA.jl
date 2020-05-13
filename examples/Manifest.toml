@@ -199,7 +199,7 @@ version = "0.2.0"
 
 [[IRTools]]
 deps = ["InteractiveUtils", "MacroTools", "Test"]
-git-tree-sha1 = "85629eb863a8eb9405607f42dbabe0fa1369f7d3"
+git-tree-sha1 = "24dd5fa5cbd00b87797161d0fa4c4aa6bf48b5f0"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/IRTools.jl.git"
 uuid = "7869d1d1-7146-5819-86e3-90919afe41df"
@@ -265,7 +265,7 @@ version = "0.4.3"
 
 [[Mjolnir]]
 deps = ["IRTools", "MacroTools"]
-git-tree-sha1 = "63f9a7381cc3b367d2db05ca304575f1ffd2a63a"
+git-tree-sha1 = "29319e28ff5f628a724c43914debfcde44dedb6e"
 repo-rev = "master"
 repo-url = "https://github.com/MikeInnes/Mjolnir.jl"
 uuid = "1154507a-7ac2-44fe-9f15-34617bca9db5"
@@ -419,7 +419,7 @@ version = "1.2.0"
 
 [[XLA]]
 deps = ["Conda", "FillArrays", "IRTools", "MacroTools", "Mjolnir", "NNlib", "PyCall", "Requires"]
-git-tree-sha1 = "4c13be18e43d3250325b046916c55d0600e6b920"
+git-tree-sha1 = "6b7b4a194e81a99b2feb50f3343e4a78d0914c14"
 repo-rev = "next"
 repo-url = "https://github.com/FluxML/XLATools.jl"
 uuid = "e639e2dd-7a4d-472e-a96e-206d6a26373c"
