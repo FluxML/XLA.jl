@@ -199,13 +199,21 @@ function xlaop!(ir, v, ::AType{typeof(broadcast)}, f, As...)
   ir[v] = Expr(:call, Map(), args[2], xs...)
 end
 
-# TODO XLA drops dimensions, Julia doesn't; make XLA do the Julia thing.
 function xlaop!(ir, v, ::AType{typeof(mapreduce)}, ::AType{typeof(identity)}, op, xs; dims = :)
   args = ir[v].expr.args
   args[1] isa KwFunc && (popfirst!(args); popfirst!(args))
   f = ir[args[3]].expr
   strip_self_arg!(f)
-  ir[v] = Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs))))
+  if dims == (:)
+    ir[v] = Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs))))
+  else
+    out = insert!(ir, v, Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs)))))
+    sz = size(ir[v].type)
+    ir[v] = Expr(:call,
+                 Reshape(1:length(size(xs))-length(dims),
+                         ntuple(i -> i in dims ? 1 : size(xs)[i], length(sz))),
+                 out)
+  end
 end
 
 function xla_identity(T)

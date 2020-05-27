@@ -69,9 +69,9 @@ xexp = xla(x -> exp.(x))
 
 xsum1 = xla(xs -> sum(xs, dims = 1))
 
-@test xsum1([1, 2, 3, 4]) == 10
+@test collect(xsum1([1, 2, 3, 4])) == [10]
 
-@test collect(xsum1([1 2; 3 4])) == [4, 6]
+@test collect(xsum1([1 2; 3 4])) == [4 6]
 
 xsoftmax = xla(softmax)
 
