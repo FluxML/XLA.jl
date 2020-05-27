@@ -95,11 +95,18 @@ end
 xlaop(args, ::AType{typeof(getindex)}, A, i) =
   xcall(DynamicSlice([1]), args[2], args[3:end]...)
 
-@abstract Operations function (a::Matrix{T} * b::Union{Matrix{T},Vector{T}}) where T<:XScalar
+@abstract Operations function (a::Matrix{T} * b::Vector{T}) where T<:XScalar
   a isa Const && b isa Const && return Const(a.value * b.value)
   n, m = size(a)
   m == size(b)[1] || error("Dimension mismatch")
   Mjolnir.Shape{Vector{T}}((n,))
+end
+
+@abstract Operations function (a::Matrix{T} * b::Matrix{T}) where T<:XScalar
+  a isa Const && b isa Const && return Const(a.value * b.value)
+  n, m = size(a)
+  m == size(b)[1] || error("Dimension mismatch")
+  Mjolnir.Shape{Matrix{T}}((n,size(b)[2]))
 end
 
 @abstract Operations function (a::Vector{T} * b::Matrix{T}) where T<:XScalar
