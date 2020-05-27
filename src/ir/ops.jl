@@ -23,6 +23,13 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem, Dot,
   end
 end
 
+struct DynamicSlice
+  size
+end
+
+build!(builder, slice::DynamicSlice, x, start...) =
+  xlaclient.ops.DynamicSlice(x, start, slice.size)
+
 alldims(builder, xs) = [0:ndims(shapeof(builder, xs))-1;]
 
 struct Map end

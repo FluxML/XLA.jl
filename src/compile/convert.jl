@@ -7,7 +7,7 @@ exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 xtypeof(x::XScalar) = typeof(x)
 xtypeof(x::Tuple) = ptuple(xtypeof.(x)...)
 xtypeof(x::Array{<:XScalar}) = Mjolnir.Shape{typeof(x)}(size(x))
-xtypeof(x::XArray{T,N}) where {T,N} = Mjolnir.Shape{Array{T,N}}(size(x)) 
+xtypeof(x::XArray{T,N}) where {T,N} = Mjolnir.Shape{Array{T,N}}(size(x))
 xtypeof(x) = isbits(x) && nfields(x) == 0 ? Const(x) : Partial{typeof(x)}((; map(f -> f=>xtypeof(getfield(x, f)), fieldnames(typeof(x)))...))
 
 layout(x::Type{<:XScalar}) = [x]
@@ -89,6 +89,11 @@ for (op, xop) in [(+, :Add), (-, :Sub)]
   @eval xlaop(args, ::AType{typeof($op)}, a::AType{T}, b::AType{T}) where T<:Array{<:XScalar} =
           xcall($xop(), args[2:end]...)
 end
+
+@abstract Operations getindex(A::Vector{T}, i::Integer) where T<:XScalar = T
+
+xlaop(args, ::AType{typeof(getindex)}, A, i) =
+  xcall(DynamicSlice([1]), args[2], args[3:end]...)
 
 @abstract Operations function (a::Matrix{T} * b::Union{Matrix{T},Vector{T}}) where T<:XScalar
   a isa Const && b isa Const && return Const(a.value * b.value)
