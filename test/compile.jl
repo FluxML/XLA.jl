@@ -103,3 +103,7 @@ end
 
 @test isxla() == false
 @test xla(isxla)() == true
+
+timestable(x) = x .* x'
+
+@test collect(xla(timestable)([1, 2, 3])) == timestable([1, 2, 3])

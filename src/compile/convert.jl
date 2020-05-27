@@ -111,7 +111,7 @@ end
 
 function xlaop!(ir, v, ::AType{typeof(*)}, A::AType{<:Array{T}}, B::AType{<:Array{T}}) where T<:XScalar
   _, a, b = ir[v].expr.args
-  A isa AType{<:Vector} && (a = insert!(ir, v, xcall(Reshape([0], [size(A)[1], 1]), a)))
+  A isa AType{<:Vector} && (a = insert!(ir, v, xcall(Reshape([1], [size(A)[1], 1]), a)))
   ir[v] = xcall(Dot(), a, b)
 end
 
@@ -119,8 +119,8 @@ end
 @abstract Operations adjoint(x::Shape{Matrix{T}}) where T<:XScalar = Mjolnir.Shape{Matrix{T}}(reverse(size(x)))
 @abstract Operations adjoint(x::Const{<:Array{<:XScalar}}) = Const(collect(adjoint(x.value)))
 
-xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Vector}) = xcall(Reshape([0], [1, size(x)[1]]), args[2])
-xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Matrix}) = xcall(Reshape([0,1], [reverse(size(x))...]), args[2])
+xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Vector}) = xcall(Reshape([1], [1, size(x)[1]]), args[2])
+xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Matrix}) = xcall(Reshape([1,2], [reverse(size(x))...]), args[2])
 
 xlaop(args, ::AType{typeof(repr)}, x) = args[2]
 
@@ -177,16 +177,18 @@ function xlaop!(ir, v, ::AType{typeof(println)}, xs...)
   tuplecat!(ir, v, ir[v].expr.args[2:end])
 end
 
+function expand(ir, x, old, new)
+  x = insertafter!(ir, x, xcall(Reshape(1:length(old), ntuple(i -> i > length(old) ? 1 : old[i], length(new))), x))
+  x = insertafter!(ir, x, xcall(BroadcastInDim(new, 1:length(new)), x))
+end
+
 function xlaop!(ir, v, ::AType{typeof(broadcast)}, f, As...)
   args = ir[v].expr.args
   f = ir[args[2]].expr
   strip_self_arg!(f)
   xs = args[3:end]
-  for i = 1:length(xs)
-    if As[i] isa Const{<:Number}
-      xs[i] = fill(convert(eltype(As[1]), xs[i]), size(As[1]))
-    end
-  end
+  new = Broadcast.broadcast_shape(size.(As)...)
+  xs = expand.((ir,), xs, size.(As), (new,))
   ir[v] = Expr(:call, Map(), args[2], xs...)
 end
 

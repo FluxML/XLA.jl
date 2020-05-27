@@ -30,6 +30,13 @@ end
 build!(builder, slice::DynamicSlice, x, start...) =
   xlaclient.ops.DynamicSlice(x, start, slice.size)
 
+struct BroadcastInDim
+  size
+  map
+end
+
+build!(builder, bc::BroadcastInDim, x) = xlaclient.ops.BroadcastInDim(x, bc.size, bc.map.-1)
+
 alldims(builder, xs) = [0:ndims(shapeof(builder, xs))-1;]
 
 struct Map end
@@ -67,12 +74,12 @@ build!(builder, op::ConvertElementType, x) =
   xlaclient.ops.ConvertElementType(x, primitivetype(op.to))
 
 struct Reshape
-  dims::Vector{Int}
-  size::Vector{Int}
+  dims
+  size
 end
 
 build!(builder, op::Reshape, x) =
-  xlaclient.ops.Reshape(x, op.dims, op.size)
+  xlaclient.ops.Reshape(x, op.dims.-1, op.size)
 
 struct Conditional end
 
