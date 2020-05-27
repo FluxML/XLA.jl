@@ -185,8 +185,11 @@ function xlaop!(ir, v, ::AType{typeof(println)}, xs...)
 end
 
 function expand(ir, x, old, new)
-  x = insertafter!(ir, x, xcall(Reshape(1:length(old), ntuple(i -> i > length(old) ? 1 : old[i], length(new))), x))
-  x = insertafter!(ir, x, xcall(BroadcastInDim(new, 1:length(new)), x))
+  if x isa Variable
+    x = insertafter!(ir, x, xcall(Reshape(1:length(old), ntuple(i -> i > length(old) ? 1 : old[i], length(new))), x))
+    x = insertafter!(ir, x, xcall(BroadcastInDim(new, 1:length(new)), x))
+  end
+  return x
 end
 
 function xlaop!(ir, v, ::AType{typeof(broadcast)}, f, As...)
@@ -194,6 +197,12 @@ function xlaop!(ir, v, ::AType{typeof(broadcast)}, f, As...)
   f = ir[args[2]].expr
   strip_self_arg!(f)
   xs = args[3:end]
+  # TODO fold this into `expand`, do a generic type promotion
+  for i = 1:length(xs)
+    if As[i] isa Const{<:Number}
+      xs[i] = fill(convert(eltype(As[1]), xs[i]), size(As[1]))
+    end
+  end
   new = Broadcast.broadcast_shape(size.(As)...)
   xs = expand.((ir,), xs, size.(As), (new,))
   ir[v] = Expr(:call, Map(), args[2], xs...)
