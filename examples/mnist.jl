@@ -3,24 +3,23 @@ using Flux.Data.MNIST
 using Flux: onehotbatch, crossentropy
 
 images = reduce(hcat, [vec(Float64.(im)) for im in MNIST.images()])
-labels = onehotbatch(MNIST.labels(), 0:9)
+labels = Float64.(onehotbatch(MNIST.labels(), 0:9))
 
 loss(m, x, y) = logitcrossentropy(m(x), y)
 
-opt = Optimisers.Descent(1e-3)
+opt = Optimisers.Descent(0.01)
 
-function step(m, x, y)
+function step(m)
   m̄, = gradient(m) do m
-    @show crossentropy(m(x), y)
+    @show crossentropy(m(images), labels)
   end
   return opt(m, m̄)
 end
-
-x = images[:,1]
-y = Float64.(collect(labels[:,1]))
 
 m = Chain(Dense(28^2, 32, relu), Dense(32, 10), softmax) |> f64
 
 xstep = xla(step)
 
-m = xstep(m, x, y)
+for i = 1:100
+  global m = xstep(m)
+end
