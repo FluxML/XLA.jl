@@ -27,8 +27,11 @@ struct DynamicSlice
   size
 end
 
-build!(builder, slice::DynamicSlice, x, start...) =
+function build!(builder, slice::DynamicSlice, x, start...)
+  one = const!(builder, 1)
+  start = map(i -> xlaclient.ops.Sub(i, one), start)
   xlaclient.ops.DynamicSlice(x, start, slice.size)
+end
 
 struct BroadcastInDim
   size

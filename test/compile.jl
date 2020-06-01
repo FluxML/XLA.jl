@@ -107,3 +107,15 @@ end
 timestable(x) = x .* x'
 
 @test collect(xla(timestable)([1, 2, 3])) == timestable([1, 2, 3])
+
+function sumloop(xs)
+  s = zero(eltype(xs))
+  for i = 1:length(xs)
+    s += xs[i]
+  end
+  return s
+end
+
+sumloop([1, 2, 3])
+
+@test xla(sumloop)([1, 2, 3]) == 6

@@ -92,8 +92,11 @@ end
 
 @abstract Operations getindex(A::Vector{T}, i::Integer) where T<:XScalar = T
 
-xlaop(args, ::AType{typeof(getindex)}, A, i) =
-  xcall(DynamicSlice([1]), args[2], args[3:end]...)
+function xlaop!(ir, v, ::AType{typeof(getindex)}, A, i)
+  args = ir[v].expr.args
+  x = insert!(ir, v, xcall(DynamicSlice([1]), args[2], args[3:end]...))
+  ir[v] = xcall(Reshape([1], []), x)
+end
 
 @abstract Operations function (a::Matrix{T} * b::Vector{T}) where T<:XScalar
   a isa Const && b isa Const && return Const(a.value * b.value)
