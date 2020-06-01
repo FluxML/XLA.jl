@@ -90,6 +90,12 @@ for (op, xop) in [(+, :Add), (-, :Sub)]
           xcall($xop(), args[2:end]...)
 end
 
+@abstract Operations reshape(A::Array{T}, i::Const{NTuple{N,Int}}) where {T<:XScalar,N} =
+  Shape{Array{T,length(i.value)}}(i.value)
+
+xlaop(args, ::AType{typeof(reshape)}, x, sh::Const) =
+  xcall(Reshape(1:ndims(x), sh.value), args[2])
+
 @abstract Operations getindex(A::Vector{T}, i::Integer) where T<:XScalar = T
 
 function xlaop!(ir, v, ::AType{typeof(getindex)}, A, i)

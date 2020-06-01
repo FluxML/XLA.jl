@@ -119,3 +119,8 @@ end
 sumloop([1, 2, 3])
 
 @test xla(sumloop)([1, 2, 3]) == 6
+
+let
+  f(x) = reshape(x, length(x))
+  @test collect(xla(f)([1 2; 3 4])) == [1, 2, 3, 4]
+end
