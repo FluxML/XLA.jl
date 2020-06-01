@@ -225,6 +225,7 @@ function xlaop!(ir, v, ::AType{typeof(mapreduce)}, ::AType{typeof(identity)}, op
   if dims == (:)
     ir[v] = Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs))))
   else
+    dims = filter(d -> d <= ndims(xs), collect(dims))
     out = insert!(ir, v, Expr(:call, Reduce(dims), args[3], args[4], zero(eltype(widen(xs)))))
     sz = size(ir[v].type)
     ir[v] = Expr(:call,
