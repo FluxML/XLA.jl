@@ -123,4 +123,6 @@ sumloop([1, 2, 3])
 let
   f(x) = reshape(x, length(x))
   @test collect(xla(f)([1 2; 3 4])) == [1, 2, 3, 4]
+  g(x) = reshape(x, (5, :))
+  @test size(xla(g)(rand(10, 10))) == (5, 20)
 end
