@@ -90,21 +90,19 @@ for (op, xop) in [(+, :Add), (-, :Sub)]
           xcall($xop(), args[2:end]...)
 end
 
-Base.length(s::Shape) = reduce(*, s.size)
-
 @abstract Operations reshape(A::Array{T}, i::NTuple{N,Int}) where {T<:XScalar,N} =
   Shape{Array{T,length(i.value)}}(i.value)
 
 @abstract Operations function reshape(A::Array{T}, i::NTuple{N,Union{Int,Colon}}) where {T<:XScalar,N}
-  dims = Base._reshape_uncolon(A, i.value)
+  dims = Base._reshape_uncolon(Fill(0, size(A)), i.value)
   Shape{Array{T,length(i.value)}}(dims)
 end
 
 xlaop(args, ::AType{typeof(reshape)}, x, sh::Const{NTuple{N,Int}}) where N =
   xcall(Reshape(1:ndims(x), sh.value), args[2])
 
-xlaop(args, ::AType{typeof(reshape)}, x, sh::Const{NTuple{N,Union{Int,Colon}}}) where N =
-  xcall(Reshape(1:ndims(x), Base._reshape_uncolon(x, sh.value)), args[2])
+xlaop(args, ::AType{typeof(reshape)}, x, sh::Const{<:Tuple{Vararg{Union{Int,Colon}}}}) =
+  xcall(Reshape(1:ndims(x), Base._reshape_uncolon(Fill(0, size(x)), sh.value)), args[2])
 
 @abstract Operations getindex(A::Vector{T}, i::Integer) where T<:XScalar = T
 
