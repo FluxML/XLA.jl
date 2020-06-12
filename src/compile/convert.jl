@@ -48,12 +48,10 @@ function transpose!(ir, v, sz = size(exprtype(ir, v)))
 end
 
 function xlaop!(ir, v, ::AType{typeof(conv)}, X, W, ::AType{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
+  @assert length(size(X)) == 4 "Only 2D conv currently supported"
   _, x, w = ir[v].expr.args
-  x = transpose!(ir, x)
-  w = transpose!(ir, w)
-  w = insertafter!(ir, w, xcall(Rev([3, 4]), w))
-  y = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, w))
-  ir[v] = transpose!(ir, y, reverse(size(exprtype(ir, v))))
+  F || (w = insertafter!(ir, w, xcall(Rev([1, 2]), w)))
+  ir[v] = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, w))
 end
 
 # Base's `<` does something complicated.

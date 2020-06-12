@@ -38,7 +38,7 @@ struct Conv
 end
 
 function build!(builder, op::Conv, x, w)
-  dims = xlaclient.make_convolution_dimension_numbers(nothing, 2)
+  dims = xlaclient.make_convolution_dimension_numbers(("WHCN", "WHIO", "WHCN"), 2)
   xlaclient.ops.ConvGeneralDilated(x, w, op.strides, op.padding, op.lhs_dilation, op.rhs_dilation, dims)
 end
 
