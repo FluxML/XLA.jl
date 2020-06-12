@@ -35,7 +35,26 @@ end
 @abstract Operations repr(x) = x
 @abstract Operations println(xs...) = Partial{Print}(Any[Mjolnir.ptuple(xs...)])
 
-@abstract Basic Base.vect(xs::Const...) = Const([x.value for x in xs])
+@abstract Operations Base.vect(xs::Const...) = Const([x.value for x in xs])
+
+@abstract Operations NNlib.DenseConvDims(xs::Const...; kw...) =
+  Const(DenseConvDims(map(x -> x.value, xs)...; kw...))
+
+@abstract Operations conv(x::Array, w::Array, dims::Const{<:DenseConvDims}) =
+  Shape{widen(x)}((NNlib.output_size(dims.value)..., size(w)[end], size(x)[end]))
+
+function transpose!(ir, v, sz = size(exprtype(ir, v)))
+  insertafter!(ir, v, xcall(Reshape(length(sz):-1:1, reverse(sz)), v))
+end
+
+function xlaop!(ir, v, ::AType{typeof(conv)}, X, W, ::AType{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
+  _, x, w = ir[v].expr.args
+  x = transpose!(ir, x)
+  w = transpose!(ir, w)
+  w = insertafter!(ir, w, xcall(Rev([3, 4]), w))
+  y = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, w))
+  ir[v] = transpose!(ir, y, reverse(size(exprtype(ir, v))))
+end
 
 # Base's `<` does something complicated.
 simplelt(a, b) = <(promote(a, b)...)
@@ -64,7 +83,8 @@ xlaop(args, ::AType{typeof(convert)}, ::AType{Type{T}}, _) where T<:XScalar =
 xlaop(args, ::AType{Type{T}}, ::AType{<:XScalar}) where T<:XScalar =
   xcall(ConvertElementType(T), args[2])
 
-for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (/, :Div), (^, :Pow), (>, :Gt), (<, :Lt), (max, :Max)]
+for (op, xop) in [(+, :Add), (*, :Mul), (-, :Sub), (/, :Div), (^, :Pow), (>, :Gt),
+                  (<, :Lt), (>=, :Ge), (<=, :Le), (max, :Max)]
   @eval @abstract Operations $op(a::Const{T}, b::Const{T}) where T<:XScalar =
     Const($op(a.value, b.value))
   @eval @abstract Operations $op(a::AType{T}, b::AType{T}) where T<:XScalar =

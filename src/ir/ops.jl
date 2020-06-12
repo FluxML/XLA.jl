@@ -23,6 +23,25 @@ for op in :[Atan2, Pow, And, Or, Xor, Add, Sub, Mul, SafeMul, Div, Rem, Dot,
   end
 end
 
+struct Rev
+  dims
+end
+
+build!(builder, op::Rev, x) =
+  xlaclient.ops.Rev(x, op.dims .- 1)
+
+struct Conv
+  strides
+  padding
+  lhs_dilation
+  rhs_dilation
+end
+
+function build!(builder, op::Conv, x, w)
+  dims = xlaclient.make_convolution_dimension_numbers(nothing, 2)
+  xlaclient.ops.ConvGeneralDilated(x, w, op.strides, op.padding, op.lhs_dilation, op.rhs_dilation, dims)
+end
+
 struct DynamicSlice
   size
 end

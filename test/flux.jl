@@ -27,3 +27,8 @@ f(x) = gradient(m -> sum(m(x)), m)[1]
 xf = xla(f)
 
 @test collect(xf(x).layers[1].W) ≈ f(x).layers[1].W
+
+x = rand(10, 10, 5, 1)
+w = rand(2, 2, 5, 3)
+
+@test collect(xla(conv)(x, w)) ≈ conv(x, w)

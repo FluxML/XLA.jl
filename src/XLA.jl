@@ -8,6 +8,7 @@ using IRTools.Inner: entry
 using MacroTools: @capture
 import Mjolnir: AType, Partial, Shape, Multi, Basic, Const, KwFunc, abstract, instead,
   ptuple, widen, @abstract
+using NNlib
 
 export @code_xla, @code_hlo, xla, isxla
 
