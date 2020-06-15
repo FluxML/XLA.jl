@@ -1,4 +1,6 @@
-using Flux, XLA, Test
+using Flux, NNlib, XLA, Test
+
+xresult(f, args...) = collect(xla(f)(args...))
 
 x, y = randn(2), randn(1, 2)
 @test collect(xla(*)(x, y)) ≈ x*y
@@ -30,5 +32,14 @@ xf = xla(f)
 
 x = rand(10, 10, 5, 1)
 w = rand(2, 2, 5, 3)
+y = rand(size(conv(x, w))...)
 
-@test collect(xla(conv)(x, w)) ≈ conv(x, w)
+@test xresult(conv, x, w) ≈ conv(x, w)
+
+@test ∇conv_data(y, w, DenseConvDims(x, w)) ≈ xresult(y, w) do y, w
+  ∇conv_data(y, w, DenseConvDims(x, w))
+end
+
+@test ∇conv_filter(x, y, DenseConvDims(x, w)) ≈ xresult(x, y) do x, y
+  ∇conv_filter(x, y, DenseConvDims(x, w))
+end

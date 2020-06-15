@@ -43,6 +43,12 @@ end
 @abstract Operations conv(x::Array, w::Array, dims::Const{<:DenseConvDims}) =
   Shape{widen(x)}((NNlib.output_size(dims.value)..., size(w)[end], size(x)[end]))
 
+@abstract Operations ∇conv_data(dy::Array, w::Array, dims::Const{<:DenseConvDims}) =
+  Shape{widen(dy)}((NNlib.input_size(dims.value)..., NNlib.channels_in(dims.value), size(dy)[end]))
+
+@abstract Operations ∇conv_filter(dy::Array, w::Array, dims::Const{<:DenseConvDims}) =
+  Shape{widen(dy)}((NNlib.kernel_size(dims.value)..., NNlib.channels_in(dims.value), NNlib.channels_out(dims.value)))
+
 function transpose!(ir, v, sz = size(exprtype(ir, v)))
   insertafter!(ir, v, xcall(Reshape(length(sz):-1:1, reverse(sz)), v))
 end
@@ -51,7 +57,26 @@ function xlaop!(ir, v, ::AType{typeof(conv)}, X, W, ::AType{DenseConvDims{N,K,C_
   @assert length(size(X)) == 4 "Only 2D conv currently supported"
   _, x, w = ir[v].expr.args
   F || (w = insertafter!(ir, w, xcall(Rev([1, 2]), w)))
-  ir[v] = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, w))
+  ir[v] = xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, w)
+end
+
+function xlaop!(ir, v, ::AType{typeof(∇conv_data)}, Ȳ, W, ::AType{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
+  @assert length(size(Ȳ)) == 4 "Only 2D conv currently supported"
+  _, dy, w = ir[v].expr.args
+  F && (w = insertafter!(ir, w, xcall(Rev([1, 2]), w)))
+  w = insertafter!(ir, w, xcall(Reshape([1, 2, 4, 3], getindex.((size(W),), [1, 2, 4, 3])), w))
+  ir[v] = xcall(Conv(S, ((0, 0) .+ (size(W)[1]-1), (0, 0) .+ (size(W)[2]-1)), [1, 1], [1, 1]), dy, w)
+end
+
+function xlaop!(ir, v, ::AType{typeof(∇conv_filter)}, X, Ȳ, dims::Const{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
+  @assert length(size(X)) == 4 "Only 2D conv currently supported"
+  _, x, dy = ir[v].expr.args
+  W = exprtype(ir, v)
+  x = insertafter!(ir, x, xcall(Reshape([1, 2, 4, 3], getindex.((size(X),), [1, 2, 4, 3])), x))
+  dy = insertafter!(ir, dy, xcall(Reshape([1, 2, 4, 3], getindex.((size(Ȳ),), [1, 2, 4, 3])), dy))
+  dw = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, dy))
+  F || (dw = insertafter!(ir, dw, xcall(Rev([1, 2]), dw)))
+  ir[v] = xcall(Reshape([1, 2, 4, 3], size(W)), dw)
 end
 
 # Base's `<` does something complicated.
