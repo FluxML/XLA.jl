@@ -40,6 +40,9 @@ end
 @abstract Operations NNlib.DenseConvDims(xs::Const...; kw...) =
   Const(DenseConvDims(map(x -> x.value, xs)...; kw...))
 
+@abstract Operations NNlib.PoolDims(xs::Const...; kw...) =
+  Const(PoolDims(map(x -> x.value, xs)...; kw...))
+
 @abstract Operations conv(x::Array, w::Array, dims::Const{<:DenseConvDims}) =
   Shape{widen(x)}((NNlib.output_size(dims.value)..., size(w)[end], size(x)[end]))
 
@@ -77,6 +80,19 @@ function xlaop!(ir, v, ::AType{typeof(∇conv_filter)}, X, Ȳ, dims::Const{Dens
   dw = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, dy))
   F || (dw = insertafter!(ir, dw, xcall(Rev([1, 2]), dw)))
   ir[v] = xcall(Reshape([1, 2, 4, 3], size(W)), dw)
+end
+
+@abstract Operations function maxpool(x::Array, dims::Const{<:PoolDims})
+  Shape{widen(x)}((NNlib.output_size(dims.value)..., size(x)[end-1:end]...))
+end
+
+poolwindow(x, k) = ntuple(i -> i > length(k) ? 1 : k[i], length(x))
+
+function xlaop!(ir, v, ::AType{typeof(maxpool)}, X, dims::Const{<:PoolDims})
+  _, x = ir[v].expr.args
+  reducer = insert!(ir, v, code_xla(max, eltype(X), eltype(X)))
+  init = zero(eltype(X))
+  ir[v] = xcall(ReduceWindow(poolwindow(size(X), NNlib.kernel_size(dims.value))), reducer, x, init)
 end
 
 # Base's `<` does something complicated.

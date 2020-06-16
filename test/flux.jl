@@ -43,3 +43,5 @@ end
 @test ∇conv_filter(x, y, DenseConvDims(x, w)) ≈ xresult(x, y) do x, y
   ∇conv_filter(x, y, DenseConvDims(x, w))
 end
+
+@test xresult(x -> maxpool(x, (2, 2)), x) ≈ maxpool(x, (2, 2))

@@ -35,6 +35,12 @@ macro code_typed(ex)
   end
 end
 
+function code_xla(f, args...)
+  tr = trace(Const(f), args...)
+  deletearg!(tr, 1)
+  convert_xla!(tr, ptuple(args...))
+end
+
 macro code_xla(ex)
   @capture(ex, f_(args__)) || error("@code_xla f(args...)")
   quote

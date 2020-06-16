@@ -78,6 +78,22 @@ function build!(builder, op::Reduce, f, xs, init)
   xlaclient.ops.Reduce(builder, [xs], [init], build(f), dims)
 end
 
+struct ReduceWindow
+  window
+  stride
+  base_dilation
+  window_dilation
+  padding
+end
+
+ReduceWindow(window) = ReduceWindow(window, window, one.(window), one.(window), map(_ -> (0, 0), window))
+
+function build!(builder, op::ReduceWindow, f, xs, init)
+  xlaclient.ops.ReduceWindowWithGeneralPadding(
+    xs, init, build(f), op.window, op.stride,
+    op.base_dilation, op.window_dilation, op.padding)
+end
+
 struct XTuple end
 
 build!(builder, ::XTuple, xs...) = xlaclient.ops.Tuple(builder, xs)
