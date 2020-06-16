@@ -13,7 +13,7 @@ constructor(T::Type{<:Tuple}) = tuple
 constructor(T::Type{<:NamedTuple{K}}) where K = (xs...) -> NamedTuple{K}(xs)
 
 function rebuild(T::Partial, xs)
-  xs = rebuild.(T.value, (xs,))
+  xs = map(T -> rebuild(T, xs), T.value)
   T = constructor(widen(T))
   return T(xs...)
 end
