@@ -56,11 +56,14 @@ function transpose!(ir, v, sz = size(exprtype(ir, v)))
   insertafter!(ir, v, xcall(Reshape(length(sz):-1:1, reverse(sz)), v))
 end
 
+xpadding() = ()
+xpadding(a, b, ps...) = ((a, b), xpadding(ps...)...)
+
 function xlaop!(ir, v, ::AType{typeof(conv)}, X, W, ::AType{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
   @assert length(size(X)) == 4 "Only 2D conv currently supported"
   _, x, w = ir[v].expr.args
   F || (w = insertafter!(ir, w, xcall(Rev([1, 2]), w)))
-  ir[v] = xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, w)
+  ir[v] = xcall(Conv(S, xpadding(P...), [1, 1], [1, 1]), x, w)
 end
 
 function xlaop!(ir, v, ::AType{typeof(∇conv_data)}, Ȳ, W, ::AType{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
@@ -68,7 +71,9 @@ function xlaop!(ir, v, ::AType{typeof(∇conv_data)}, Ȳ, W, ::AType{DenseConvD
   _, dy, w = ir[v].expr.args
   F && (w = insertafter!(ir, w, xcall(Rev([1, 2]), w)))
   w = insertafter!(ir, w, xcall(Reshape([1, 2, 4, 3], getindex.((size(W),), [1, 2, 4, 3])), w))
-  ir[v] = xcall(Conv(S, ((0, 0) .+ (size(W)[1]-1), (0, 0) .+ (size(W)[2]-1)), [1, 1], [1, 1]), dy, w)
+  p = xpadding(P...)
+  p = ntuple(i -> size(W)[i]-1 .- p[i], length(p))
+  ir[v] = xcall(Conv(S, p, [1, 1], [1, 1]), dy, w)
 end
 
 function xlaop!(ir, v, ::AType{typeof(∇conv_filter)}, X, Ȳ, dims::Const{DenseConvDims{N,K,C_in,C_out,S,P,D,F}}) where {N,K,C_in,C_out,S,P,D,F}
