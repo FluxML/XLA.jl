@@ -220,7 +220,7 @@ end
 @abstract Operations adjoint(x::Const{<:Array{<:XScalar}}) = Const(collect(adjoint(x.value)))
 
 xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Vector}) = xcall(Reshape([1], [1, size(x)[1]]), args[2])
-xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Matrix}) = xcall(Reshape([1,2], [reverse(size(x))...]), args[2])
+xlaop(args, ::AType{typeof(adjoint)}, x::AType{<:Matrix}) = xcall(Reshape([2, 1], [reverse(size(x))...]), args[2])
 
 xlaop(args, ::AType{typeof(repr)}, x) = args[2]
 
