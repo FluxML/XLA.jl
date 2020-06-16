@@ -82,7 +82,8 @@ function xlaop!(ir, v, ::AType{typeof(∇conv_filter)}, X, Ȳ, dims::Const{Dens
   W = exprtype(ir, v)
   x = insertafter!(ir, x, xcall(Reshape([1, 2, 4, 3], getindex.((size(X),), [1, 2, 4, 3])), x))
   dy = insertafter!(ir, dy, xcall(Reshape([1, 2, 4, 3], getindex.((size(Ȳ),), [1, 2, 4, 3])), dy))
-  dw = insert!(ir, v, xcall(Conv(S, ((0, 0), (0, 0)), [1, 1], [1, 1]), x, dy))
+  p = xpadding(P...)
+  dw = insert!(ir, v, xcall(Conv(S, p, [1, 1], [1, 1]), x, dy))
   F || (dw = insertafter!(ir, dw, xcall(Rev([1, 2]), dw)))
   ir[v] = xcall(Reshape([1, 2, 4, 3], size(W)), dw)
 end
