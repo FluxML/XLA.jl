@@ -5,8 +5,6 @@ using Flux: onehotbatch, crossentropy
 images = reduce(hcat, [vec(Float64.(im)) for im in MNIST.images()])
 labels = Float64.(onehotbatch(MNIST.labels(), 0:9))
 
-loss(m, x, y) = logitcrossentropy(m(x), y)
-
 opt = Optimisers.Descent(0.01)
 
 function step(m)

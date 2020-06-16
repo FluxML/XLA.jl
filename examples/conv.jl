@@ -7,8 +7,6 @@ images = reduce(hcat, [vec(Float64.(im)) for im in MNIST.images()])
 images = reshape(images, 28, 28, 1, :)
 labels = Float64.(onehotbatch(MNIST.labels(), 0:9))
 
-loss(m, x, y) = logitcrossentropy(m(x), y)
-
 opt = Optimisers.Descent(0.1)
 
 function step(m, x, y)
