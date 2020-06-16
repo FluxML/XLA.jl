@@ -45,3 +45,7 @@ end
 end
 
 @test xresult(x -> maxpool(x, (2, 2)), x) ≈ maxpool(x, (2, 2))
+
+y = maxpool(x, (2, 2))
+
+@test xresult(x -> ∇maxpool(y, y, x, PoolDims(x, (2, 2))), x) ≈ ∇maxpool(y, y, x, PoolDims(x, (2, 2)))

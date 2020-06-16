@@ -86,6 +86,10 @@ end
   Shape{widen(x)}((NNlib.output_size(dims.value)..., size(x)[end-1:end]...))
 end
 
+@abstract Operations function ∇maxpool(dy::Array, y::Array, x::Array, dims::Const{<:PoolDims})
+  Shape{widen(x)}(size(x))
+end
+
 poolwindow(x, k) = ntuple(i -> i > length(k) ? 1 : k[i], length(x))
 
 function xlaop!(ir, v, ::AType{typeof(maxpool)}, X, dims::Const{<:PoolDims})
@@ -93,6 +97,13 @@ function xlaop!(ir, v, ::AType{typeof(maxpool)}, X, dims::Const{<:PoolDims})
   reducer = insert!(ir, v, code_xla(max, eltype(X), eltype(X)))
   init = zero(eltype(X))
   ir[v] = xcall(ReduceWindow(poolwindow(size(X), NNlib.kernel_size(dims.value))), reducer, x, init)
+end
+
+function xlaop!(ir, v, ::AType{typeof(∇maxpool)}, Ȳ, Y, X, dims::Const{<:PoolDims})
+  _, dy, y, x = ir[v].expr.args
+  select = insert!(ir, v, code_xla(>, eltype(X), eltype(X)))
+  scatter = insert!(ir, v, code_xla((x, y) -> y, eltype(X), eltype(X)))
+  ir[v] = xcall(SelectAndScatter(poolwindow(size(X), NNlib.kernel_size(dims.value))), select, scatter, x, dy, zero(eltype(X)))
 end
 
 # Base's `<` does something complicated.

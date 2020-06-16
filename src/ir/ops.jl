@@ -94,6 +94,19 @@ function build!(builder, op::ReduceWindow, f, xs, init)
     op.base_dilation, op.window_dilation, op.padding)
 end
 
+struct SelectAndScatter
+  window
+  stride
+  padding
+end
+
+SelectAndScatter(window) = SelectAndScatter(window, window, map(_ -> (0, 0), window))
+
+function build!(builder, op::SelectAndScatter, select, scatter, xs, source, init)
+  xlaclient.ops.SelectAndScatterWithGeneralPadding(
+    xs, build(select), op.window, op.stride, op.padding, source, init, build(scatter))
+end
+
 struct XTuple end
 
 build!(builder, ::XTuple, xs...) = xlaclient.ops.Tuple(builder, xs)
