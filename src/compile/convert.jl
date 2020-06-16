@@ -4,7 +4,7 @@ Primitives() = Multi(Operations(), Basic())
 
 exprtype(ir, x) = IRTools.exprtype(ir, x, typeof = Const)
 
-xtypeof(x::XScalar) = typeof(x)
+xtypeof(x::XScalar) = Const(x)
 xtypeof(x::Tuple) = ptuple(xtypeof.(x)...)
 xtypeof(x::Array{<:XScalar}) = Mjolnir.Shape{typeof(x)}(size(x))
 xtypeof(x::XArray{T,N}) where {T,N} = Mjolnir.Shape{Array{T,N}}(size(x))
