@@ -5,7 +5,7 @@ using Flux: onehotbatch, crossentropy
 images = reduce(hcat, [vec(Float64.(im)) for im in MNIST.images()])
 labels = Float64.(onehotbatch(MNIST.labels(), 0:9))
 
-opt = Optimisers.Descent(0.01)
+opt = Optimisers.Descent(0.1)
 
 function step(m)
   m̄, = gradient(m) do m
